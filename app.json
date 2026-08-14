@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "nhip-app",
+    "name": "NHIP",
     "slug": "nhip-app",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
     },
@@ -20,6 +20,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "experiments": {
+      "//": "GitHub Pages เสิร์ฟที่ /<repo-name> — asset ทั้งหมดต้องอ้างอิงจาก base path นี้",
+      "baseUrl": "/nhip-offline-application"
+    },
+    "plugins": [
+      "expo-font"
+    ],
+    "backgroundColor": "#F8FAFC"
   }
 }
