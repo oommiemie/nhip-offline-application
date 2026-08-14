@@ -3,6 +3,8 @@
 แอปต้นแบบระบบสารสนเทศสำหรับ รพ.สต. ทำงานแบบ offline-first — พอร์ตจากดีไซน์ Figma
 "NHIP Offline Application" (ธีมเขียว MOPH) + โครงหน้าจอจาก desktop comp เดิม
 
+**เปิดดูตัวจริง → https://oommiemie.github.io/nhip-offline-application/**
+
 ## เริ่มใช้งาน
 
 ```bash
@@ -32,3 +34,18 @@ Type-check: `npx tsc --noEmit`
 คอมโพเนนต์ทั้งหมดพร้อม props, แพตเทิร์นหน้าจอ, mapping Figma → ไฟล์, จุดต่อระบบจริง และ checklist
 
 ภาพอ้างอิงดีไซน์ทั้ง 8 หน้าจอจาก Figma อยู่ที่ `docs/figma/`
+
+## Deploy
+
+เว็บ deploy อัตโนมัติขึ้น GitHub Pages ทุกครั้งที่ push เข้า `main` ผ่าน
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) — ขั้นตอนคือ `npm ci` → `tsc --noEmit` → `expo export -p web` → อัปโหลด `dist/`
+
+> `app.json` ตั้ง `experiments.baseUrl` เป็น `/nhip-offline-application` เพราะ Pages เสิร์ฟใต้ path ชื่อ repo
+> ถ้าเปลี่ยนชื่อ repo หรือย้ายไป custom domain ต้องแก้ค่านี้ด้วย ไม่งั้น asset จะ 404
+
+Build เองในเครื่อง:
+
+```bash
+npx expo export -p web    # ได้ dist/
+npx serve dist            # ลองเปิดดูก่อน deploy
+```
