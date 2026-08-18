@@ -1,13 +1,23 @@
-import React from 'react';
-import { Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  Modal,
+  Platform,
+  Pressable,
+  View,
+  useWindowDimensions,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 
+const ROW_H = 34;
+
 const WEB_NO_OUTLINE = Platform.OS === 'web' ? ({ outlineStyle: 'none', outlineWidth: 0 } as unknown as ViewStyle) : null;
 
-/** ปุ่มกลม 40×40 ของแถบแบ่งหน้า (Figma 16:859 · page-*) */
+/** ปุ่มกลมของแถบแบ่งหน้า — 32px (ย่อจาก 40 ของ Figma ให้เข้ากับความหนาแน่นของตาราง) */
 const PageDot: React.FC<{
   children: React.ReactNode;
   active?: boolean;
@@ -23,9 +33,9 @@ const PageDot: React.FC<{
       disabled={disabled || !onPress}
       style={({ pressed }) => [
         {
-          width: 40,
-          height: 40,
-          borderRadius: 20,
+          width: 32,
+          height: 32,
+          borderRadius: 16,
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: active ? c.primary : soft ? c.surface2 : c.card,
@@ -79,12 +89,21 @@ export const Pagination: React.FC<PaginationProps> = ({
 }) => {
   const t = useTheme();
   const c = t.colors;
+  const { width: winW, height: winH } = useWindowDimensions();
   const items = pagesFor(page, Math.max(1, totalPages));
 
-  const cyclePageSize = () => {
-    if (!pageSize || !onPageSizeChange) return;
-    const i = pageSizeOptions.indexOf(pageSize);
-    onPageSizeChange(pageSizeOptions[(i + 1) % pageSizeOptions.length]);
+  /* dropdown จำนวนรายการต่อหน้า — วัดตำแหน่งจากปุ่มจริง แบบเดียวกับ SelectField */
+  const sizeRef = useRef<View>(null);
+  const [sizeOpen, setSizeOpen] = useState(false);
+  const [anchor, setAnchor] = useState({ x: 0, y: 0, w: 0, h: 0 });
+  const menuH = pageSizeOptions.length * ROW_H + 12;
+  const openUp = anchor.y + anchor.h + menuH + 14 > winH;
+
+  const openSizeMenu = () => {
+    sizeRef.current?.measureInWindow((x, y, w, h) => {
+      setAnchor({ x, y, w, h });
+      setSizeOpen(true);
+    });
   };
 
   return (
@@ -96,7 +115,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           gap: 10,
           flexWrap: 'wrap',
           paddingHorizontal: 16,
-          paddingVertical: 12,
+          paddingVertical: 10,
           backgroundColor: c.card,
         },
         style,
@@ -104,21 +123,24 @@ export const Pagination: React.FC<PaginationProps> = ({
     >
       {pageSize ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <AppText size="md" muted>
+          <AppText size="sm" muted>
             แสดง
           </AppText>
           <Pressable
-            onPress={cyclePageSize}
+            ref={sizeRef}
+            onPress={openSizeMenu}
             disabled={!onPageSizeChange}
             style={({ pressed }) => [
               {
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 8,
-                height: 42,
-                paddingHorizontal: 16,
+                gap: 7,
+                height: 34,
+                paddingHorizontal: 12,
                 borderRadius: t.radius.md,
                 backgroundColor: c.inputBg,
+                borderWidth: 1.5,
+                borderColor: sizeOpen ? c.ring : 'transparent',
                 opacity: pressed ? 0.7 : 1,
               },
               WEB_NO_OUTLINE,
@@ -127,9 +149,11 @@ export const Pagination: React.FC<PaginationProps> = ({
             <AppText size="sm" mono>
               {pageSize}
             </AppText>
-            <Ionicons name="chevron-down" size={16} color={c.foreground} />
+            <View style={{ transform: [{ rotate: sizeOpen ? '180deg' : '0deg' }] }}>
+              <Ionicons name="chevron-down" size={14} color={c.foreground} />
+            </View>
           </Pressable>
-          <AppText size="md" muted>
+          <AppText size="sm" muted>
             รายการ
           </AppText>
         </View>
@@ -137,9 +161,9 @@ export const Pagination: React.FC<PaginationProps> = ({
 
       <View style={{ flex: 1, minWidth: 12 }} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <PageDot soft disabled={page <= 1} onPress={() => onPageChange(page - 1)}>
-          <Ionicons name="chevron-back" size={16} color={c.foreground} />
+          <Ionicons name="chevron-back" size={15} color={c.foreground} />
         </PageDot>
         {items.map((p, i) =>
           p === '…' ? (
@@ -157,9 +181,58 @@ export const Pagination: React.FC<PaginationProps> = ({
           ),
         )}
         <PageDot soft disabled={page >= totalPages} onPress={() => onPageChange(page + 1)}>
-          <Ionicons name="chevron-forward" size={16} color={c.foreground} />
+          <Ionicons name="chevron-forward" size={15} color={c.foreground} />
         </PageDot>
       </View>
+
+      {/* เมนูจำนวนรายการต่อหน้า — สไตล์เดียวกับ dropdown ของ SelectField */}
+      <Modal visible={sizeOpen} transparent statusBarTranslucent animationType="fade" onRequestClose={() => setSizeOpen(false)}>
+        <Pressable style={{ flex: 1 }} onPress={() => setSizeOpen(false)}>
+          <View
+            style={[
+              {
+                position: 'absolute',
+                top: openUp ? anchor.y - menuH - 6 : anchor.y + anchor.h + 6,
+                left: Math.max(8, Math.min(anchor.x, winW - anchor.w - 8)),
+                minWidth: anchor.w,
+                borderRadius: t.radius.md,
+                backgroundColor: c.popover,
+                borderWidth: t.isDark ? 1 : 0,
+                borderColor: c.border,
+                overflow: 'hidden',
+                paddingVertical: 6,
+              },
+              t.shadow.md,
+            ]}
+          >
+            {pageSizeOptions.map((n) => {
+              const on = n === pageSize;
+              return (
+                <Pressable
+                  key={n}
+                  onPress={() => {
+                    setSizeOpen(false);
+                    onPageSizeChange?.(n);
+                  }}
+                  style={({ pressed }) => ({
+                    minHeight: ROW_H,
+                    paddingHorizontal: 14,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 10,
+                    backgroundColor: pressed ? c.surface2 : 'transparent',
+                  })}
+                >
+                  <AppText size="sm" mono weight={on ? '700' : '400'} color={on ? c.primary : c.foreground} style={{ flex: 1 }}>
+                    {n}
+                  </AppText>
+                  {on ? <Ionicons name="checkmark" size={15} color={c.primary} /> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 };

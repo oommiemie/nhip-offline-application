@@ -43,6 +43,12 @@ export interface SectionCardProps extends Omit<CardProps, 'children'> {
   children: React.ReactNode;
   /** padding เนื้อหาใต้หัวข้อ (0 เมื่อวางตารางชิดขอบ) */
   bodyPadding?: number;
+  /** ขนาดหัวข้อ (Figma หน้า Sync ใช้ 16 = 'lg' · ค่าเริ่มต้น 15 = 'md') */
+  titleSize?: 'md' | 'lg';
+  /** เส้นคั่นใต้แถวหัวข้อ — Figma หน้า Sync ไม่มีเส้น ปล่อยให้แถบหัวตารางคั่นเอง */
+  divider?: boolean;
+  /** ระยะบน-ล่างของแถวหัวข้อ */
+  headerPaddingV?: number;
 }
 
 /** การ์ดพร้อมแถวหัวข้อ + เส้นคั่น ใช้เป็นโครงหลักของทุก section ในหน้าจอ */
@@ -52,6 +58,9 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   right,
   children,
   bodyPadding = 16,
+  titleSize = 'md',
+  divider = true,
+  headerPaddingV = 13,
   rounded = 'xl',
   shadow = 'sm',
   style,
@@ -65,13 +74,13 @@ export const SectionCard: React.FC<SectionCardProps> = ({
           alignItems: 'center',
           gap: 10,
           paddingHorizontal: 16,
-          paddingVertical: 13,
-          borderBottomWidth: 1,
+          paddingVertical: headerPaddingV,
+          borderBottomWidth: divider ? 1 : 0,
           borderBottomColor: t.colors.border,
         }}
       >
         <View style={{ flex: 1, gap: 1 }}>
-          <AppText size="md" weight="700">
+          <AppText size={titleSize} weight="700">
             {title}
           </AppText>
           {caption ? (

@@ -11,14 +11,28 @@ export interface ChipProps {
   onPress?: () => void;
   count?: string | number;
   dot?: string;
+  /** ไอคอนนำหน้าป้าย (hero หน้า Sync ใช้ swap-horizontal ตาม Figma 32:12478) */
+  icon?: React.ReactNode;
+  /** โทนเขียว: ขอบ + ตัวอักษรใช้สี ring แทนสีเทา — ชิปบนพื้นการ์ดสว่างตาม Figma */
+  accent?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
 /** ชิปตัวกรอง/แท็บรอง ทรง pill — active = พื้นเขียวอ่อน ตัวอักษรเขียวเข้ม */
-export const Chip: React.FC<ChipProps> = ({ label, active = false, onPress, count, dot, style }) => {
+export const Chip: React.FC<ChipProps> = ({
+  label,
+  active = false,
+  onPress,
+  count,
+  dot,
+  icon,
+  accent = false,
+  style,
+}) => {
   const t = useTheme();
   const c = t.colors;
   const tone = t.tones.primary;
+  const fg = active ? tone.fg : accent ? c.ring : c.mutedForeground;
   return (
     <Pressable
       onPress={onPress}
@@ -33,17 +47,18 @@ export const Chip: React.FC<ChipProps> = ({ label, active = false, onPress, coun
           borderRadius: t.radius.pill,
           backgroundColor: active ? tone.bg : c.card,
           borderWidth: 1,
-          borderColor: active ? tone.border : c.border,
+          borderColor: active ? tone.border : accent ? c.ring : c.border,
         },
         style,
       ]}
     >
       {dot ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dot }} /> : null}
-      <AppText size="sm" weight={active ? '600' : '400'} color={active ? tone.fg : c.mutedForeground}>
+      {icon ? <View>{icon}</View> : null}
+      <AppText size="sm" weight={active || accent ? '600' : '400'} color={fg}>
         {label}
       </AppText>
       {count !== undefined && count !== '' ? (
-        <AppText size="xs" weight="600" mono color={active ? tone.fg : c.mutedForeground}>
+        <AppText size="xs" weight="600" mono color={fg}>
           {count}
         </AppText>
       ) : null}

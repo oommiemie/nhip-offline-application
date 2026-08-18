@@ -9,6 +9,7 @@ import cloudQueue from '../assets/figma/cloud-queue.png';
 import cloudPass from '../assets/figma/cloud-pass.png';
 import cloudFail from '../assets/figma/cloud-fail.png';
 import cloudLast from '../assets/figma/cloud-last.png';
+import cloudProgress from '../assets/figma/cloud-progress.png';
 import idCard from '../assets/figma/id-card.png';
 
 /**
@@ -26,11 +27,12 @@ export const FigmaAssets = {
   kpiDone,
   kpiLab,
   kpiAvg,
-  /** ไอคอน 3D เมฆ หน้า Sync (nodes 32/33:1xxxx) */
+  /** ไอคอน 3D เมฆ หน้า Sync (nodes 32/33:1xxxx · cloudProgress = node 105:41) */
   cloudQueue,
   cloudPass,
   cloudFail,
   cloudLast,
+  cloudProgress,
   /** ภาพบัตรประชาชน (node I31:12223;31:12142) — modal ลงทะเบียน */
   idCard,
 };

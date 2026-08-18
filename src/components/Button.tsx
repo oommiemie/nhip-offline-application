@@ -3,7 +3,7 @@ import { ActivityIndicator, View, type StyleProp, type ViewStyle } from 'react-n
 
 import { useTheme, withAlpha } from '../theme';
 import { AppText } from './AppText';
-import { AnimatedPressable, usePressScale } from './usePressScale';
+import { AnimatedPressable, useHoverFade, usePressScale } from './usePressScale';
 
 export type ButtonVariant = 'primary' | 'strong' | 'outline' | 'ghost' | 'destructive' | 'subtle';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -63,12 +63,40 @@ export const Button: React.FC<ButtonProps> = ({
   const dim = disabled || loading;
   const press = usePressScale(0.97);
   const [pressed, setPressed] = useState(false);
+  const h = useHoverFade();
+  const hover = h.hover;
+
+  /*
+   * hover (เว็บ/เมาส์): แบบพื้นทึบใช้สีอ่อนลงหนึ่งขั้น · แบบโปร่ง/ขอบใช้พื้นเขียวจาง
+   * ไม่ใช้ transform ยกตัวเพราะจะไปทับ scale ของอนิเมชันตอนกด (RN ไม่ merge transform array)
+   */
+  const solid = v.bg !== 'transparent';
+  const hoverBg =
+    variant === 'primary'
+      ? c.accent
+      : variant === 'strong'
+        ? c.primary
+        : variant === 'destructive'
+          ? withAlpha(c.destructive, 0.88)
+          : variant === 'outline' || variant === 'subtle'
+            ? // ต้องเป็นสีทึบ — ปุ่ม outline ถูกวางบนพื้นเข้มได้ (เช่นแบนเนอร์ dashboard)
+              // ถ้าใช้สีโปร่งพื้นขาวจะหายกลายเป็นสีพื้นหลังแทน
+              t.tones.primary.bg
+            : withAlpha(c.primary, 0.09);
+  // ตอนกดสลับสีทันที (ต้องรู้สึกฉับไว) · ตอน hover ไล่สีนุ่ม ๆ 140ms
+  const bg = pressed && solid ? withAlpha(v.bg, 0.85) : dim ? v.bg : h.mix(v.bg, hoverBg);
+  const borderCol = v.border ? (dim ? v.border : h.mix(v.border, withAlpha(c.primary, 0.45))) : undefined;
 
   return (
     <AnimatedPressable
       testID={testID}
       onPress={dim ? undefined : onPress}
       disabled={dim}
+      onPointerEnter={h.handlers.onPointerEnter}
+      onPointerLeave={() => {
+        h.handlers.onPointerLeave();
+        setPressed(false);
+      }}
       onPressIn={() => {
         if (dim) return;
         setPressed(true);
@@ -83,9 +111,9 @@ export const Button: React.FC<ButtonProps> = ({
           height,
           paddingHorizontal: padH,
           borderRadius: radius,
-          backgroundColor: pressed && v.bg !== 'transparent' ? withAlpha(v.bg, 0.85) : v.bg,
+          backgroundColor: bg,
           borderWidth: v.border ? 1 : 0,
-          borderColor: v.border,
+          borderColor: borderCol,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
@@ -93,7 +121,8 @@ export const Button: React.FC<ButtonProps> = ({
           opacity: dim ? 0.55 : 1,
           alignSelf: full ? 'stretch' : 'auto',
         },
-        variant === 'primary' || variant === 'strong' ? t.shadow.sm : null,
+        // เงาลึกขึ้นตอน hover ให้ปุ่มดูลอยขึ้นมารับเมาส์
+        hover && !dim ? t.shadow.md : variant === 'primary' || variant === 'strong' ? t.shadow.sm : null,
         press.pressStyle,
         style,
       ]}

@@ -17,7 +17,8 @@ export type OssTabId =
 export type SsoState = 'out' | 'busy' | 'in';
 
 /** สถานะเครื่องอ่านบัตรใน modal ลงทะเบียน (ตรงกับ Figma 3 step) */
-export type ReaderState = 'idle' | 'ready' | 'reading' | 'read';
+/** เครื่องอ่านบัตร: ยังไม่เชื่อม → กำลังเชื่อม → พร้อมอ่าน → กำลังอ่าน → อ่านสำเร็จ */
+export type ReaderState = 'idle' | 'connecting' | 'ready' | 'reading' | 'read';
 
 /** ขั้นตอนคิวของคนไข้ → ใช้ map เป็น badge สถานะ */
 export type QueueStage = 'wait' | 'screen' | 'pending' | 'lab' | 'done';
@@ -31,6 +32,12 @@ export interface PatientCard {
   dob: string;
   age: number;
   address: string;
+  /** จากบัตรประชาชน */
+  race: string;
+  nationality: string;
+  religion: string;
+  /** ไม่มีบนบัตร — สอบถามผู้ป่วยตอนลงทะเบียน */
+  bloodType: string;
   allergy: string;
   chronic: string;
   service: string;
@@ -51,6 +58,8 @@ export interface VisitRecord extends PatientCard {
   queueNo: string;
   time: string;
   right: string;
+  /** เบอร์โทรติดต่อกลับที่บันทึกตอนลงทะเบียน (ว่าง = ยังไม่ได้ระบุ) */
+  phone: string;
   stage: QueueStage;
   fHist: boolean;
   fPe: boolean;
@@ -100,6 +109,9 @@ export interface RegisterPayload {
   right: string;
   service: string;
   allergy: string;
+  bloodType: string;
+  /** เบอร์โทรติดต่อกลับ — ไม่มีบนบัตรประชาชน ต้องสอบถามผู้ป่วย (ว่างได้) */
+  phone: string;
 }
 
 export type NoticeTone = 'success' | 'warning' | 'destructive' | 'info';

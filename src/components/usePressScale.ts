@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable } from 'react-native';
 
 import { useTheme } from '../theme';
@@ -41,5 +41,44 @@ export const usePressScale = (to = 0.96) => {
       onPressIn: () => run(to),
       onPressOut: () => run(1),
     },
+  };
+};
+
+/**
+ * สถานะ hover แบบไล่ค่าแทนการสลับทันที
+ * คืน `progress` (0→1) กับตัวช่วย `mix()` ไว้ผสมสีต้นทาง→ปลายทางตามความคืบหน้า
+ *
+ *   const h = useHoverFade();
+ *   <Animated.View {...h.handlers} style={{ backgroundColor: h.mix(base, hovered) }} />
+ *
+ * ใช้ JS driver เพราะ interpolate สีทำบน native driver ไม่ได้ · เคารพ reduceMotion ให้อัตโนมัติ
+ */
+export const useHoverFade = (duration = 140) => {
+  const t = useTheme();
+  const [hover, setHover] = useState(false);
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const a = Animated.timing(progress, {
+      toValue: hover ? 1 : 0,
+      duration: t.reduceMotion ? 0 : duration,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false,
+    });
+    a.start();
+    return () => a.stop();
+  }, [hover, progress, duration, t.reduceMotion]);
+
+  return {
+    hover,
+    progress,
+    setHover,
+    handlers: {
+      onPointerEnter: () => setHover(true),
+      onPointerLeave: () => setHover(false),
+    },
+    mix: (from: string, to: string) => progress.interpolate({ inputRange: [0, 1], outputRange: [from, to] }),
+    /** ไล่ค่าตัวเลข เช่น ระยะยกตัวตอน hover */
+    num: (from: number, to: number) => progress.interpolate({ inputRange: [0, 1], outputRange: [from, to] }),
   };
 };

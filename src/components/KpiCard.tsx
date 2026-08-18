@@ -1,9 +1,10 @@
 import React from 'react';
-import { Image, View, type ImageSourcePropType, type StyleProp, type ViewStyle } from 'react-native';
+import { Animated, Image, View, type ImageSourcePropType, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme, withAlpha } from '../theme';
+import { useHoverFade } from './usePressScale';
 import { AppText } from './AppText';
 
 export interface KpiCardProps {
@@ -29,11 +30,11 @@ export interface KpiCardProps {
 export const KpiCard: React.FC<KpiCardProps> = ({ label, value, unit, caption, accent, image, icon, style }) => {
   const t = useTheme();
   const c = t.colors;
-  const [hover, setHover] = React.useState(false);
+  const h = useHoverFade();
+  const textPadRight = image ? 44 : 0;
   return (
-    <View
-      onPointerEnter={() => setHover(true)}
-      onPointerLeave={() => setHover(false)}
+    <Animated.View
+      {...h.handlers}
       style={[
         {
           flex: 1,
@@ -41,24 +42,25 @@ export const KpiCard: React.FC<KpiCardProps> = ({ label, value, unit, caption, a
           borderRadius: t.radius.lg,
           backgroundColor: c.card,
           borderWidth: 1,
-          borderColor: hover ? withAlpha(accent, 0.5) : c.border,
+          // hover: ขอบไล่เป็นสีสถานะของการ์ด + ยกตัวขึ้น 2px แบบนุ่ม ๆ
+          borderColor: h.mix(c.border, withAlpha(accent, 0.5)),
           padding: 16,
           gap: 8,
           // ครอปภาพ 3D ที่ยื่นพ้นมุมล่างขวา ให้ดูเหมือนโผล่ขึ้นมาจากขอบการ์ด
           overflow: 'hidden',
+          transform: [{ translateY: h.num(0, -2) }],
         },
-        // hover: ยกตัวขึ้นเล็กน้อย + ขอบติดสีสถานะ + เงาลึกขึ้น
-        hover ? [{ transform: [{ translateY: -2 }] }, t.shadow.md] : null,
+        h.hover ? t.shadow.md : null,
         style,
       ]}
     >
       {/* เว้นทางขวาให้ภาพ 3D ไม่ทับตัวหนังสือ · zIndex 2 = อยู่เหนือเกรเดียนต์ที่ไล่จางภาพ */}
-      <AppText size="sm" weight="600" muted numberOfLines={1} style={{ paddingRight: image ? 44 : 0, zIndex: 2 }}>
+      <AppText size="base" weight="600" muted numberOfLines={1} style={{ paddingRight: textPadRight, zIndex: 2 }}>
         {label}
       </AppText>
-      <View style={{ gap: 2, paddingRight: image ? 44 : 0, zIndex: 2 }}>
+      <View style={{ gap: 2, paddingRight: textPadRight, zIndex: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
-          <AppText size="kpi" weight="700" color={accent} style={{ lineHeight: t.fs.kpi * 1.2 }}>
+          <AppText size="kpi" weight="700" color={accent}>
             {value}
           </AppText>
           {unit ? (
@@ -105,6 +107,6 @@ export const KpiCard: React.FC<KpiCardProps> = ({ label, value, unit, caption, a
           <MaterialCommunityIcons name={icon} size={22} color={accent} />
         </View>
       ) : null}
-    </View>
+    </Animated.View>
   );
 };

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useApp } from '../state/AppContext';
 import { useTheme, withAlpha } from '../theme';
-import { AnimatedPressable, AppText, StatusDot, Tooltip, usePressScale } from '../components';
+import { AnimatedPressable, AppText, StatusDot, Tooltip, useHoverFade, usePressScale } from '../components';
 import { NAV, type NavDef } from './navItems';
 import { Spotlight } from '../modals/Spotlight';
 import { NoticeBell } from '../modals/NoticePanel';
@@ -42,19 +42,18 @@ const NavItem: React.FC<{ def: NavDef; active: boolean; compact: boolean; badge?
 }) => {
   const t = useTheme();
   const c = t.colors;
-  const [hover, setHover] = React.useState(false);
   /*
-   * เมนูที่ไม่ได้เลือก = ไม่มีพื้นปุ่ม (โปร่งใสบนพื้นมิ้นต์) มีแค่ตอนชี้เมาส์เป็นไฮไลต์จาง ๆ
+   * เมนูที่ไม่ได้เลือก = ไม่มีพื้นปุ่ม (โปร่งใสบนพื้นมิ้นต์) มีแค่ตอนชี้เมาส์เป็นไฮไลต์จาง ๆ ที่ค่อย ๆ ไล่เข้ามา
    * เมนูที่เลือก = เขียวทึบตัวหนังสือขาว ตัดกับพื้นมิ้นต์ชัดว่าอยู่หน้าไหน
    */
   const fg = active ? c.primaryForeground : t.isDark ? c.foreground : c.primaryStrong;
   const press = usePressScale(0.96);
+  const h = useHoverFade();
   return (
     <AnimatedPressable
       onPress={onPress}
       {...press.handlers}
-      onPointerEnter={() => setHover(true)}
-      onPointerLeave={() => setHover(false)}
+      {...h.handlers}
       style={[
         {
           flexDirection: 'row',
@@ -64,7 +63,7 @@ const NavItem: React.FC<{ def: NavDef; active: boolean; compact: boolean; badge?
           paddingHorizontal: compact ? 0 : 14,
           justifyContent: compact ? 'center' : 'flex-start',
           borderRadius: t.radius.md,
-          backgroundColor: active ? c.primary : hover ? withAlpha(c.card, 0.6) : 'transparent',
+          backgroundColor: active ? c.primary : h.mix('transparent', withAlpha(c.card, 0.6)),
         },
         active ? t.shadow.md : null,
         press.pressStyle,

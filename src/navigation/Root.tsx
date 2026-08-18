@@ -18,9 +18,16 @@ import { SsoModal } from '../modals/SsoModal';
 export const Root: React.FC = () => {
   const { state } = useApp();
 
-  // login และ setup-ก่อนยืนยันตัวตน แชร์ layout เดียวกัน (AuthFlow) → สลับเฉพาะการ์ดขวา
-  if (state.view === 'login' || (state.view === 'setup' && state.sso !== 'in')) return <AuthFlow />;
-  if (state.view === 'setup') return <SetupScreen />;
+  if (state.view === 'login') return <AuthFlow />;
+  // "ตั้งค่าสถานพยาบาลครั้งแรก" เข้าหน้าดึงข้อมูลตรง ๆ แล้วกดยืนยันตัวตน SSO จากแบนเนอร์ในหน้านั้น
+  // → ต้อง mount SsoModal ไว้ด้วย ไม่งั้นกดปุ่มแล้วไม่มีอะไรขึ้น
+  if (state.view === 'setup')
+    return (
+      <>
+        <SetupScreen />
+        <SsoModal />
+      </>
+    );
 
   return (
     <>

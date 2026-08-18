@@ -36,3 +36,17 @@ export const greeting = (): string => {
 
 /** 1234 -> "1,234" */
 export const fmtInt = (n: number): string => n.toLocaleString('en-US');
+
+/**
+ * จัดรูปเบอร์โทรไทยระหว่างพิมพ์ — เก็บแต่ตัวเลข สูงสุด 10 หลัก แล้วคั่นเป็น 3-3-4
+ * ("0812345678" -> "081-234-5678" · เบอร์บ้าน 9 หลักได้ "043-123-456")
+ */
+export const formatPhone = (input: string): string => {
+  const d = input.replace(/\D/g, '').slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+};
+
+/** จำนวนหลักของเบอร์โทร (ใช้ตรวจความครบถ้วน — เบอร์บ้าน 9 หลัก มือถือ 10 หลัก) */
+export const phoneDigits = (input: string): number => input.replace(/\D/g, '').length;

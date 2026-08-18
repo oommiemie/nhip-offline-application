@@ -274,7 +274,7 @@ Export จากไฟล์ Figma ด้วย images API ที่ scale 2x �
 |---|---|---|
 | `logo-moph.png` | `16:58` | ตรากระทรวง หน้า Login/SSO (`BrandPanel`) |
 | `kpi-wait/exam/done/lab/avg.png` | `28:10605–10628` | ภาพ 3D การ์ด KPI หน้า Dashboard |
-| `cloud-queue/pass/fail/last.png` | `33:16571, 32:13470, 33:16580, 33:16588` | ภาพเมฆ 3D การ์ด KPI หน้า Sync |
+| `cloud-queue/pass/fail/last/progress.png` | เฟรม `105:41` (ชุดเมฆใหม่ 245px · แทนชุดเดิม `33:16571, 32:13470, 33:16580, 33:16588` เมื่อ 17 ส.ค. 2026) | ภาพเมฆ 3D การ์ด KPI 5 ใบ หน้า Sync |
 | `id-card.png` | `I31:12223;31:12142` | ภาพบัตรประชาชนใน RegisterModal |
 | `setup-illustration.png` | `16:648` | ภาพเซิร์ฟเวอร์ 3D หน้า Setup (แสดงเมื่อจอ ≥1180px) |
 

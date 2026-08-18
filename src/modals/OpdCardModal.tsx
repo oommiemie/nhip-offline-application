@@ -1,22 +1,201 @@
 import React from 'react';
-import { View, useWindowDimensions } from 'react-native';
+import { View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { AlertBand, AppModal, AppText, Badge, Button, CheckSquare, KeyValue } from '../components';
+import { AlertBand, AppModal, AppText, Avatar, Badge, Button } from '../components';
 import { useApp } from '../state/AppContext';
-import { useTheme } from '../theme';
+import { useTheme, withAlpha } from '../theme';
+import type { VisitRecord } from '../state/types';
 import { thaiToday } from '../utils/format';
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
+/** คำนำหน้าที่ตัดออกก่อนทำอักษรย่อในวงกลม */
+const TITLES = ['นางสาว', 'เด็กชาย', 'เด็กหญิง', 'ด.ช.', 'ด.ญ.', 'น.ส.', 'นาง', 'นาย', 'พระ'];
+
+const initials = (name: string): string => {
+  const bare = TITLES.reduce((s, p) => (s.startsWith(p) ? s.slice(p.length) : s), name.trim());
+  return (bare.replace(/\s/g, '') || name).slice(0, 2);
+};
+
+/** หน่วยของสัญญาณชีพแต่ละตัว (คีย์ตรงกับ mockData) */
+const VITAL_UNITS: Record<string, string> = {
+  BP: 'mmHg',
+  ชีพจร: '/นาที',
+  หายใจ: '/นาที',
+  อุณหภูมิ: '°C',
+  SpO2: '%',
+  DTX: 'mg/dL',
+};
+
+type Flag = { tone: string; note: string } | null;
+
+/**
+ * เกณฑ์คัดกรองค่าผิดปกติของ รพ.สต. (ใช้เตือนสายตาเท่านั้น ไม่ใช่การวินิจฉัย)
+ * ค่าที่เข้าเกณฑ์จะเปลี่ยนสีตัวเลข + ติดป้ายกำกับมุมขวาของไทล์
+ */
+const vitalFlag = (key: string, value: string, warn: string, bad: string): Flag => {
+  const num = parseFloat(value);
+  if (key === 'BP') {
+    const [sys, dia] = value.split('/').map((n) => parseFloat(n));
+    if (sys >= 160 || dia >= 100) return { tone: bad, note: 'สูงมาก' };
+    if (sys >= 140 || dia >= 90) return { tone: warn, note: 'สูง' };
+    if (sys && sys < 90) return { tone: bad, note: 'ต่ำ' };
+    return null;
+  }
+  if (Number.isNaN(num)) return null;
+  if (key === 'ชีพจร') return num > 100 ? { tone: warn, note: 'เร็ว' } : num < 60 ? { tone: warn, note: 'ช้า' } : null;
+  if (key === 'หายใจ') return num > 20 ? { tone: warn, note: 'เร็ว' } : null;
+  if (key === 'อุณหภูมิ') return num >= 37.5 ? { tone: warn, note: 'มีไข้' } : null;
+  if (key === 'SpO2') return num < 95 ? { tone: bad, note: 'ต่ำ' } : null;
+  if (key === 'DTX') return num >= 126 ? { tone: warn, note: 'สูง' } : num < 70 ? { tone: bad, note: 'ต่ำ' } : null;
+  return null;
+};
+
+/** ป้ายข้อมูลย่อในหัวการ์ดผู้ป่วย */
+const Pill: React.FC<{ label: string; mono?: boolean; icon?: keyof typeof Ionicons.glyphMap }> = ({
+  label,
+  mono = false,
+  icon,
+}) => {
   const t = useTheme();
+  const c = t.colors;
   return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <AppText size="sm" weight="700">
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        height: 26,
+        paddingHorizontal: 10,
+        borderRadius: t.radius.pill,
+        backgroundColor: c.card,
+        borderWidth: 1,
+        borderColor: withAlpha(c.primary, 0.22),
+      }}
+    >
+      {icon ? <Ionicons name={icon} size={13} color={c.primary} /> : null}
+      <AppText size="xs" weight="600" mono={mono} color={c.primaryStrong}>
+        {label}
+      </AppText>
+    </View>
+  );
+};
+
+/** การ์ดหัวข้อของ OPD Card — ไอคอนวงกลม + ชื่อหัวข้อ + จำนวนรายการ */
+const InfoCard: React.FC<{
+  title: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  count?: number;
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}> = ({ title, icon, count, children, style }) => {
+  const t = useTheme();
+  const c = t.colors;
+  return (
+    <View
+      style={[
+        {
+          gap: 12,
+          padding: 14,
+          borderRadius: t.radius.lg,
+          backgroundColor: c.card,
+          borderWidth: 1,
+          borderColor: c.border,
+        },
+        style,
+      ]}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+        <View
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 9,
+            backgroundColor: t.tones.primary.bg,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <MaterialCommunityIcons name={icon} size={16} color={t.tones.primary.fg} />
+        </View>
+        <AppText size="md" weight="700" style={{ flex: 1 }}>
           {title}
         </AppText>
-        <View style={{ flex: 1, height: 1, backgroundColor: t.colors.border }} />
+        {count !== undefined ? (
+          <AppText size="xs" weight="600" mono muted>
+            {count} รายการ
+          </AppText>
+        ) : null}
       </View>
       {children}
+    </View>
+  );
+};
+
+const Divider: React.FC = () => {
+  const t = useTheme();
+  return <View style={{ height: 1, backgroundColor: t.colors.border }} />;
+};
+
+/** ข้อความยาว: label เล็กด้านบน ค่าด้านล่าง */
+const Field: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <View style={{ gap: 2 }}>
+    <AppText size="xs" muted>
+      {label}
+    </AppText>
+    <AppText size="sm" weight="600">
+      {value || '—'}
+    </AppText>
+  </View>
+);
+
+/** รางแสดงขั้นตอนที่บันทึกครบแล้ว — วงกลมติ๊กถูกเชื่อมด้วยเส้น */
+const StepRail: React.FC<{ steps: Array<[string, boolean]> }> = ({ steps }) => {
+  const t = useTheme();
+  const c = t.colors;
+  return (
+    <View style={{ flexDirection: 'row' }}>
+      {steps.map(([label, on], i) => {
+        const prevOn = i > 0 && steps[i - 1][1] && on;
+        const nextOn = i < steps.length - 1 && steps[i + 1][1] && on;
+        return (
+          <View key={label} style={{ flex: 1, alignItems: 'center', gap: 7 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch' }}>
+              <View style={{ flex: 1, height: 2, backgroundColor: i === 0 ? 'transparent' : prevOn ? c.primary : c.border }} />
+              <View
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 13,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: on ? c.primary : c.surface3,
+                  borderWidth: on ? 0 : 1,
+                  borderColor: c.border,
+                }}
+              >
+                {on ? (
+                  <Ionicons name="checkmark" size={15} color={c.primaryForeground} />
+                ) : (
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.mutedForeground }} />
+                )}
+              </View>
+              <View
+                style={{ flex: 1, height: 2, backgroundColor: i === steps.length - 1 ? 'transparent' : nextOn ? c.primary : c.border }}
+              />
+            </View>
+            <AppText
+              size="xs"
+              weight={on ? '600' : '400'}
+              center
+              numberOfLines={2}
+              color={on ? c.foreground : c.mutedForeground}
+            >
+              {label}
+            </AppText>
+          </View>
+        );
+      })}
     </View>
   );
 };
@@ -27,10 +206,10 @@ export const OpdCardModal: React.FC = () => {
   const c = t.colors;
   const { state, actions } = useApp();
   const { width } = useWindowDimensions();
-  const wide = width >= 760;
+  const wide = width >= 860;
 
   const idx = state.opdIdx;
-  const r = idx !== null ? state.records[idx] : null;
+  const r: VisitRecord | null = idx !== null ? (state.records[idx] ?? null) : null;
   if (idx === null || !r) return null;
 
   const syncBadge =
@@ -48,11 +227,12 @@ export const OpdCardModal: React.FC = () => {
     ['Lab / X-ray', r.fLab || r.fXray],
     ['วัคซีน', r.fVax],
   ];
+  const doneSteps = steps.filter(([, on]) => on).length;
 
-  const orders: Array<[string, string]> = [
-    ...r.labs.map((x): [string, string] => ['LAB', x]),
-    ...r.xray.map((x): [string, string] => ['X-RAY', x]),
-    ...r.vax.map((x): [string, string] => ['วัคซีน', x]),
+  const orders: Array<[string, string, 'info' | 'purple' | 'success']> = [
+    ...r.labs.map((x): [string, string, 'info'] => ['LAB', x, 'info']),
+    ...r.xray.map((x): [string, string, 'purple'] => ['X-RAY', x, 'purple']),
+    ...r.vax.map((x): [string, string, 'success'] => ['วัคซีน', x, 'success']),
   ];
 
   return (
@@ -62,7 +242,7 @@ export const OpdCardModal: React.FC = () => {
       title="OPD Card · สรุปการรับบริการ"
       titleBadge={
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, backgroundColor: c.muted }}>
+          <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: c.muted }}>
             <AppText size="xs" weight="600" mono>
               V{r.hn}-{r.time.replace(':', '')}
             </AppText>
@@ -70,179 +250,290 @@ export const OpdCardModal: React.FC = () => {
           <Badge label={syncBadge.label} tone={syncBadge.tone} size="sm" />
         </View>
       }
-      maxWidth={900}
-    >
-      <View style={{ gap: 14 }}>
-        {/* ข้อมูลผู้ป่วย */}
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: 14,
-            padding: 14,
-            borderRadius: t.radius.lg,
-            backgroundColor: c.surface2,
-            borderWidth: 1,
-            borderColor: c.border,
-          }}
-        >
-          <KeyValue label="HN" value={r.hn} mono />
-          <KeyValue label="ชื่อ-นามสกุล" value={r.name} />
-          <KeyValue label="เพศ / อายุ" value={`${r.sex} · ${r.age} ปี`} />
-          <KeyValue label="เลขบัตรประชาชน" value={r.cid} mono />
-          <KeyValue label="สิทธิ์การรักษา" value={r.right} />
-          <KeyValue label="วัน-เวลารับบริการ" value={`${thaiToday()} ${r.time}`} />
-          <View style={{ width: '100%' }}>
-            <KeyValue label="ที่อยู่" value={r.address} />
+      maxWidth={980}
+      footer={
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 240 }}>
+            <MaterialCommunityIcons name="cloud-upload-outline" size={17} color={c.mutedForeground} />
+            <AppText size="sm" muted>
+              สถานะอัปโหลดขึ้น Cloud
+            </AppText>
+            <Badge label={syncBadge.label} tone={syncBadge.tone} size="sm" />
+            {r.sync === 'fail' && r.error ? (
+              <AppText size="xs" color={c.destructive} numberOfLines={1} style={{ flex: 1 }}>
+                {r.error}
+              </AppText>
+            ) : null}
           </View>
+          {r.sync === 'fail' ? (
+            <Button label="แก้ไขและอัปโหลดใหม่" variant="destructive" onPress={() => actions.openEdit(idx)} />
+          ) : null}
+          <Button label="ปิด" variant="outline" onPress={actions.closeOpd} />
         </View>
+      }
+    >
+      <View style={{ gap: 14, paddingBottom: 6 }}>
+        {/* หัวการ์ด: ตัวตนผู้ป่วย — ไล่สีเขียวจางให้ดูเป็นหัวเอกสาร */}
+        <LinearGradient
+          colors={[withAlpha(c.primary, t.isDark ? 0.22 : 0.13), withAlpha(c.primary, 0.02)]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ borderRadius: t.radius.lg, borderWidth: 1, borderColor: withAlpha(c.primary, 0.18), padding: 16, gap: 14 }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
+            <Avatar label={initials(r.name)} size={52} />
+            <View style={{ flex: 1, minWidth: 220, gap: 8 }}>
+              <AppText size="xl" weight="700" color={t.isDark ? c.foreground : c.secondary}>
+                {r.name}
+              </AppText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                <Pill label={`HN ${r.hn}`} mono icon="person-outline" />
+                <Pill label={`${r.sex} · ${r.age} ปี`} />
+                <Pill label={r.right} icon="shield-checkmark-outline" />
+                <Pill label={`คิว ${r.queueNo}`} mono />
+              </View>
+            </View>
+            {/* ข้อมูลการมารับบริการ — ชิดขวาเมื่อจอกว้าง */}
+            <View style={{ gap: 8, alignItems: wide ? 'flex-end' : 'flex-start', minWidth: 200 }}>
+              <View style={{ alignItems: wide ? 'flex-end' : 'flex-start', gap: 2 }}>
+                <AppText size="xs" muted>
+                  วัน-เวลารับบริการ
+                </AppText>
+                <AppText size="sm" weight="600">
+                  {thaiToday()} · {r.time}
+                </AppText>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                <Badge label={r.service} tone="primary" size="sm" />
+                <AppText size="xs" muted mono>
+                  ห้อง {r.room}
+                </AppText>
+              </View>
+            </View>
+          </View>
 
-        {r.allergy ? (
-          <AlertBand variant="danger" title={`แพ้ยา ${r.allergy}`} detail="ตรวจสอบซ้ำก่อนสั่งยาทุกครั้ง" style={{ borderRadius: t.radius.md }} />
-        ) : (
-          <AlertBand variant="caution" title="ไม่พบประวัติแพ้ยา" detail="สอบถามและบันทึกซ้ำทุกครั้งที่รับบริการ" style={{ borderRadius: t.radius.md }} />
-        )}
+          <View style={{ height: 1, backgroundColor: withAlpha(c.primary, 0.16) }} />
 
-        {/* ขั้นตอนที่ทำแล้ว */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {steps.map(([label, on]) => (
-            <View
-              key={label}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 7,
-                paddingHorizontal: 10,
-                paddingVertical: 7,
-                borderRadius: t.radius.md,
-                backgroundColor: on ? t.tones.primary.bg : c.surface2,
-                borderWidth: 1,
-                borderColor: on ? t.tones.primary.border : c.border,
-              }}
-            >
-              <CheckSquare checked={on} size={15} />
-              <AppText size="xs" weight={on ? '600' : '400'} color={on ? t.tones.primary.fg : c.mutedForeground}>
-                {label}
+          <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+              <Ionicons name="card-outline" size={15} color={c.mutedForeground} />
+              <AppText size="sm" muted>
+                เลขบัตรประชาชน
+              </AppText>
+              <AppText size="sm" weight="600" mono>
+                {r.cid}
               </AppText>
             </View>
-          ))}
-        </View>
-
-        {/* สองคอลัมน์ */}
-        <View style={wide ? { flexDirection: 'row', gap: 18 } : { gap: 18 }}>
-          <View style={{ flex: 1, gap: 14 }}>
-            <Section title="สัญญาณชีพ">
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {r.vitals.map(([k, v]) => (
-                  <View
-                    key={k}
-                    style={{ minWidth: 86, flex: 1, gap: 1, padding: 9, borderRadius: t.radius.md, backgroundColor: c.surface2 }}
-                  >
-                    <AppText size="xs" muted>
-                      {k}
-                    </AppText>
-                    <AppText size="sm" weight="700" mono>
-                      {v}
-                    </AppText>
-                  </View>
-                ))}
+            {r.phone ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                <Ionicons name="call-outline" size={15} color={c.mutedForeground} />
+                <AppText size="sm" muted>
+                  โทร
+                </AppText>
+                <AppText size="sm" weight="600" mono>
+                  {r.phone}
+                </AppText>
               </View>
-            </Section>
-            <Section title="ซักประวัติ / ตรวจร่างกาย">
-              <View style={{ gap: 8 }}>
-                <KeyValue label="อาการสำคัญ (CC)" value={r.cc} />
-                <KeyValue label="ประวัติปัจจุบัน (HPI)" value={r.hpi} />
-                <KeyValue label="การตรวจร่างกาย (PE)" value={r.pe} />
-                <KeyValue label="โรคประจำตัว" value={r.chronic} />
-              </View>
-            </Section>
+            ) : null}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, flex: 1, minWidth: 260 }}>
+              <Ionicons name="location-outline" size={15} color={c.mutedForeground} />
+              <AppText size="sm" muted>
+                ที่อยู่
+              </AppText>
+              <AppText size="sm" weight="600" style={{ flex: 1 }} numberOfLines={1}>
+                {r.address}
+              </AppText>
+            </View>
           </View>
+        </LinearGradient>
+
+        {r.allergy ? (
+          <AlertBand
+            variant="danger"
+            title={`แพ้ยา ${r.allergy}`}
+            detail="ตรวจสอบซ้ำก่อนสั่งยาทุกครั้ง"
+            style={{ borderRadius: t.radius.md }}
+          />
+        ) : (
+          <AlertBand
+            variant="caution"
+            title="ไม่พบประวัติแพ้ยา"
+            detail="สอบถามและบันทึกซ้ำทุกครั้งที่รับบริการ"
+            style={{ borderRadius: t.radius.md }}
+          />
+        )}
+
+        {/* ความครบถ้วนของการบันทึก */}
+        <InfoCard title="ขั้นตอนที่บันทึกแล้ว" icon="progress-check">
+          <View style={{ gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <AppText size="sm" weight="700" mono color={doneSteps === steps.length ? c.success : c.warning}>
+                {doneSteps}/{steps.length}
+              </AppText>
+              <AppText size="sm" muted style={{ flex: 1 }}>
+                {doneSteps === steps.length ? 'บันทึกครบทุกขั้นตอน พร้อมอัปโหลดขึ้น Cloud' : 'ขั้นตอนที่ยังไม่บันทึกจะไม่ถูกส่งขึ้น Cloud'}
+              </AppText>
+            </View>
+            <StepRail steps={steps} />
+          </View>
+        </InfoCard>
+
+        {/* เนื้อหา 2 คอลัมน์ */}
+        <View style={wide ? { flexDirection: 'row', gap: 14, alignItems: 'flex-start' } : { gap: 14 }}>
           <View style={{ flex: 1, gap: 14 }}>
-            <Section title="การวินิจฉัย (ICD-10)">
-              <View style={{ gap: 6 }}>
-                {r.icd.length ? (
-                  r.icd.map(([code, name, kind]) => (
+            <InfoCard title="สัญญาณชีพ" icon="heart-pulse">
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {r.vitals.map(([k, v]) => {
+                  const flag = vitalFlag(k, v, c.warning, c.destructive);
+                  return (
                     <View
-                      key={code}
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: 9, padding: 8, borderRadius: t.radius.md, backgroundColor: c.surface2 }}
+                      key={k}
+                      style={{
+                        flexBasis: '30%',
+                        flexGrow: 1,
+                        minWidth: 96,
+                        gap: 3,
+                        padding: 10,
+                        borderRadius: t.radius.md,
+                        backgroundColor: flag ? withAlpha(flag.tone, 0.09) : c.surface2,
+                        borderWidth: 1,
+                        borderColor: flag ? withAlpha(flag.tone, 0.32) : 'transparent',
+                      }}
                     >
-                      <AppText size="sm" weight="700" mono color={c.primary} style={{ minWidth: 58 }}>
-                        {code}
-                      </AppText>
-                      <AppText size="sm" style={{ flex: 1 }} numberOfLines={2}>
-                        {name}
-                      </AppText>
-                      <AppText size="xs" muted>
-                        {kind}
-                      </AppText>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <AppText size="xs" muted style={{ flex: 1 }} numberOfLines={1}>
+                          {k}
+                        </AppText>
+                        {flag ? (
+                          <AppText size="xs" weight="700" color={flag.tone}>
+                            {flag.note}
+                          </AppText>
+                        ) : null}
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+                        <AppText size="lg" weight="700" mono color={flag ? flag.tone : undefined}>
+                          {v}
+                        </AppText>
+                        {VITAL_UNITS[k] ? (
+                          <AppText size="xs" muted>
+                            {VITAL_UNITS[k]}
+                          </AppText>
+                        ) : null}
+                      </View>
                     </View>
-                  ))
-                ) : (
-                  <AppText size="sm" muted>
-                    ยังไม่มีการวินิจฉัย
-                  </AppText>
-                )}
+                  );
+                })}
               </View>
-            </Section>
-            <Section title="ยาที่จ่าย">
-              <View style={{ gap: 4 }}>
-                {r.drugs.length ? (
-                  r.drugs.map((d) => (
-                    <AppText key={d} size="sm">
-                      • {d}
-                    </AppText>
-                  ))
-                ) : (
-                  <AppText size="sm" muted>
-                    ไม่มีการจ่ายยา
-                  </AppText>
-                )}
+            </InfoCard>
+
+            <InfoCard title="ซักประวัติ / ตรวจร่างกาย" icon="clipboard-text-outline">
+              <View style={{ gap: 10 }}>
+                <Field label="อาการสำคัญ (CC)" value={r.cc} />
+                <Divider />
+                <Field label="ประวัติปัจจุบัน (HPI)" value={r.hpi} />
+                <Divider />
+                <Field label="การตรวจร่างกาย (PE)" value={r.pe} />
+                <Divider />
+                <Field label="โรคประจำตัว" value={r.chronic} />
               </View>
-            </Section>
-            <Section title="Lab / X-ray / วัคซีน">
-              <View style={{ gap: 5 }}>
-                {orders.length ? (
-                  orders.map(([kind, text]) => (
-                    <View key={`${kind}-${text}`} style={{ flexDirection: 'row', gap: 8 }}>
-                      <AppText size="xs" weight="600" mono muted style={{ minWidth: 46 }}>
-                        {kind}
-                      </AppText>
-                      <AppText size="sm" style={{ flex: 1 }}>
+            </InfoCard>
+          </View>
+
+          <View style={{ flex: 1, gap: 14 }}>
+            <InfoCard title="การวินิจฉัย (ICD-10)" icon="stethoscope" count={r.icd.length}>
+              {r.icd.length ? (
+                <View style={{ gap: 10 }}>
+                  {r.icd.map(([code, name, kind], i) => (
+                    <React.Fragment key={code}>
+                      {i > 0 ? <Divider /> : null}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <View
+                          style={{
+                            paddingHorizontal: 9,
+                            paddingVertical: 4,
+                            borderRadius: t.radius.sm,
+                            backgroundColor: t.tones.primary.bg,
+                          }}
+                        >
+                          <AppText size="sm" weight="700" mono color={t.tones.primary.fg}>
+                            {code}
+                          </AppText>
+                        </View>
+                        <AppText size="sm" weight="600" style={{ flex: 1 }} numberOfLines={2}>
+                          {name}
+                        </AppText>
+                        <Badge label={kind} tone={kind === 'หลัก' ? 'primary' : 'neutral'} size="sm" />
+                      </View>
+                    </React.Fragment>
+                  ))}
+                </View>
+              ) : (
+                <AppText size="sm" muted>
+                  ยังไม่บันทึกการวินิจฉัย
+                </AppText>
+              )}
+            </InfoCard>
+
+            <InfoCard title="ยาที่จ่าย" icon="pill" count={r.drugs.length}>
+              {r.drugs.length ? (
+                <View style={{ gap: 9 }}>
+                  {r.drugs.map((d) => {
+                    // แยกชื่อยา (คำแรก) ออกจากขนาด/วิธีใช้ เพื่อเน้นชื่อยาให้อ่านเร็ว
+                    const m = d.match(/^(\S+)\s+(.*)$/);
+                    return (
+                      <View key={d} style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+                        <MaterialCommunityIcons name="pill" size={15} color={c.mutedForeground} />
+                        <AppText size="sm" weight="600">
+                          {m ? m[1] : d}
+                        </AppText>
+                        {m ? (
+                          <AppText size="sm" muted mono style={{ flex: 1 }} numberOfLines={1}>
+                            {m[2]}
+                          </AppText>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : (
+                <AppText size="sm" muted>
+                  ไม่มีการจ่ายยาในครั้งนี้
+                </AppText>
+              )}
+            </InfoCard>
+
+            <InfoCard title="Lab / X-ray / วัคซีน" icon="flask-outline" count={orders.length}>
+              {orders.length ? (
+                <View style={{ gap: 9 }}>
+                  {orders.map(([kind, text, tone]) => (
+                    <View key={`${kind}-${text}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+                      <View
+                        style={{
+                          minWidth: 54,
+                          alignItems: 'center',
+                          paddingHorizontal: 7,
+                          paddingVertical: 3,
+                          borderRadius: t.radius.sm,
+                          backgroundColor: t.tones[tone].bg,
+                        }}
+                      >
+                        <AppText size="xs" weight="700" mono color={t.tones[tone].fg}>
+                          {kind}
+                        </AppText>
+                      </View>
+                      <AppText size="sm" weight="600" style={{ flex: 1 }}>
                         {text}
                       </AppText>
                     </View>
-                  ))
-                ) : (
-                  <AppText size="sm" muted>
-                    ไม่มีรายการสั่งตรวจหรือวัคซีน
-                  </AppText>
-                )}
-              </View>
-            </Section>
+                  ))}
+                </View>
+              ) : (
+                <AppText size="sm" muted>
+                  ไม่มีรายการสั่งตรวจหรือวัคซีน
+                </AppText>
+              )}
+            </InfoCard>
           </View>
-        </View>
-
-        {/* สถานะซิงค์ */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 10,
-            padding: 12,
-            borderRadius: t.radius.md,
-            borderWidth: 1,
-            borderStyle: 'dashed',
-            borderColor: c.border,
-            marginBottom: 6,
-          }}
-        >
-          <AppText size="sm" muted style={{ flex: 1 }}>
-            สถานะการอัปโหลดขึ้น Cloud: <AppText size="sm" weight="700">{syncBadge.label}</AppText>
-            {r.sync === 'fail' ? ` — ${r.error}` : ''}
-          </AppText>
-          {r.sync === 'fail' ? (
-            <Button label="แก้ไขและอัปโหลดใหม่" variant="destructive" size="sm" onPress={() => actions.openEdit(idx)} />
-          ) : null}
         </View>
       </View>
     </AppModal>

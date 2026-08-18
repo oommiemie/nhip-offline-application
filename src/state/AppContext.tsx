@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { nowHM } from '../utils/format';
-import { BRANCHES, CARDS, FACILITIES, IMPORT_TABLES, SYNC_FAILS, tablesForFacility } from './mockData';
+import { BRANCHES, CARDS, FACILITIES, IMPORT_TABLES, QUEUE_SEED, SYNC_FAILS, tablesForFacility } from './mockData';
 import type {
   AppNotice,
   AppState,
@@ -59,12 +59,13 @@ const seedNotices = (): AppNotice[] => [
 const makeRecord = (
   card: PatientCard,
   index: number,
-  extra: Partial<Pick<VisitRecord, 'time' | 'stage' | 'right' | 'service' | 'allergy'>> = {}
+  extra: Partial<Pick<VisitRecord, 'time' | 'stage' | 'right' | 'service' | 'allergy' | 'phone'>> = {}
 ): VisitRecord => ({
   ...card,
   hn: String(HN_BASE + index * HN_STEP),
   queueNo: `A-${String(index + 1).padStart(3, '0')}`,
   time: extra.time ?? nowHM(),
+  phone: extra.phone ?? '',
   right: extra.right ?? (index % 4 === 1 ? 'ประกันสังคม' : index % 4 === 3 ? 'ข้าราชการ' : 'บัตรทอง (UC)'),
   service: extra.service ?? card.service,
   allergy: extra.allergy ?? card.allergy,
@@ -81,12 +82,9 @@ const makeRecord = (
   errorValue: '',
 });
 
-/** seed คิว 5 รายแรกให้หน้าจอมีข้อมูลเหมือนดีไซน์ Figma ตั้งแต่เปิดแอป */
-const SEED_STAGES: QueueStage[] = ['screen', 'wait', 'done', 'lab', 'wait'];
-const SEED_TIMES = ['08:52', '09:03', '09:10', '09:15', '09:28'];
-
+/** คิวตั้งต้น 30 ราย — รายชื่อ/สถานะ/เวลามาถึง อยู่ที่ QUEUE_SEED ใน mockData */
 const seedRecords = (): VisitRecord[] =>
-  CARDS.slice(0, 5).map((c, i) => makeRecord(c, i, { stage: SEED_STAGES[i], time: SEED_TIMES[i] }));
+  QUEUE_SEED.map((q, i) => makeRecord(q.card, i, { stage: q.stage, time: q.time }));
 
 /** dev shortcut (เว็บเท่านั้น): เปิด /#app /#oss /#sync /#settings เพื่อข้ามหน้า login ระหว่างพัฒนา */
 const webHash = (): string => {
@@ -118,7 +116,7 @@ const initialState = (): AppState => ({
   setupDone: false,
   records: seedRecords(),
   curIdx: null,
-  seq: 5,
+  seq: QUEUE_SEED.length,
   regOpen: false,
   reader: 'idle',
   card: null,
@@ -280,7 +278,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         syncIdx.current = i + 1;
         return { ...s, records, syncLog: log, syncPct: Math.round(((i + 1) / records.length) * 100) };
       });
-    }, 320);
+      // 30 ราย × 150 ms ≈ 4.5 วิ — เร็วพอให้ดูจบในการสาธิต แต่ยังเห็น log ไล่ทีละรายการ
+    }, 150);
   }, []);
 
   const ssoLogin = useCallback(() => {
@@ -384,11 +383,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   /* ---------------- Card reader ---------------- */
 
+  // เปิด modal มาที่สถานะแรกเสมอ — ไม่ข้ามให้เอง เจ้าหน้าที่ต้องกดเชื่อมเครื่องอ่านก่อน
   const openReg = useCallback(() => {
     setState((s) => ({ ...s, regOpen: true, reader: 'idle', card: null }));
-    // จำลองการเชื่อมต่อเครื่องอ่านบัตร: ไม่พร้อม → พร้อมอ่าน (Figma step 1 → 2)
-    later(1100, () => {
-      setState((s) => (s.regOpen && s.reader === 'idle' ? { ...s, reader: 'ready' } : s));
+  }, []);
+
+  /** step 1 → 2: จำลองการเชื่อมต่อเครื่องอ่านบัตร */
+  const connectReader = useCallback(() => {
+    setState((s) => (s.reader === 'idle' ? { ...s, reader: 'connecting' } : s));
+    later(900, () => {
+      setState((s) => (s.regOpen && s.reader === 'connecting' ? { ...s, reader: 'ready' } : s));
     });
   }, [later]);
 
@@ -409,11 +413,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setState((s) => {
       if (!s.card) return s;
       const idx = s.records.length;
-      const rec = makeRecord(s.card, idx, {
-        right: payload.right,
-        service: payload.service,
-        allergy: payload.allergy,
-      });
+      const rec = {
+        ...makeRecord(s.card, idx, {
+          right: payload.right,
+          service: payload.service,
+          allergy: payload.allergy,
+          phone: payload.phone,
+        }),
+        bloodType: payload.bloodType,
+      };
       return {
         ...s,
         records: [...s.records, rec],
@@ -471,11 +479,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ssoOpen: () => setState((s) => ({ ...s, ssoModalOpen: true })),
       ssoClose: () => setState((s) => ({ ...s, ssoModalOpen: false, syncAfterAuth: false })),
       ssoLogin,
-      ssoLogout: () => setState((s) => ({ ...s, sso: 'out', ssoUser: '', ssoTime: '' })),
+      ssoLogout: () => {
+        // ออกจากระบบระหว่างซิงค์ = หยุดอัปโหลดทันที ห้ามส่งข้อมูลขึ้น Cloud โดยไม่มีตัวตนผู้ทำรายการ
+        if (timers.current.sync) clearInterval(timers.current.sync);
+        setState((s) => ({
+          ...s,
+          sso: 'out',
+          ssoUser: '',
+          ssoTime: '',
+          syncing: false,
+          syncLog: s.syncing ? [...s.syncLog, line('ยกเลิกการซิงค์ — ออกจากระบบ MOPH SSO', 'err')] : s.syncLog,
+        }));
+      },
       startSetupImport,
       openReg,
       closeReg: () => setState((s) => ({ ...s, regOpen: false, reader: 'idle', card: null })),
-      connectReader: () => setState((s) => ({ ...s, reader: 'ready' })),
+      connectReader,
       readCard,
       rereadCard: readCard,
       confirmReg,
@@ -492,6 +511,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       closeEdit: () => setState((s) => ({ ...s, editingIdx: null })),
       resubmit: (idx, newValue) =>
         setState((s) => {
+          // อัปโหลดซ้ำก็คือการส่งข้อมูลขึ้น Cloud — ต้องยืนยันตัวตน MOPH SSO ก่อนเหมือนปุ่มเริ่มซิงค์
+          if (s.sso !== 'in') return { ...s, editingIdx: null, ssoModalOpen: true };
           const records = s.records.map((r, i) =>
             i === idx ? { ...r, sync: 'pass' as const, error: '', errorField: '', errorValue: newValue } : r
           );
@@ -522,7 +543,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       markAllNoticesRead: () => setState((s) => ({ ...s, notices: s.notices.map((n) => ({ ...n, read: true })) })),
       clearNotices: () => setState((s) => ({ ...s, notices: [] })),
     }),
-    [ssoLogin, startSetupImport, openReg, readCard, confirmReg, runSync, later]
+    [ssoLogin, startSetupImport, openReg, connectReader, readCard, confirmReg, runSync, later]
   );
 
   const derived = useMemo<AppDerived>(() => {

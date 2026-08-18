@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, View, useWindowDimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import {
   AppText,
@@ -8,12 +9,13 @@ import {
   DataTable,
   EmptyState,
   KpiCard,
+  StatusDot,
   Pagination,
   WireMesh,
 } from '../components';
 import type { Column } from '../components';
 import { FigmaAssets } from '../assets';
-import { DOCTORS, STAGE_META } from '../state/mockData';
+import { DOCTORS, STAGE_META, roomLabel } from '../state/mockData';
 import { useApp } from '../state/AppContext';
 import type { VisitRecord } from '../state/types';
 import { useTheme } from '../theme';
@@ -58,61 +60,69 @@ const RoomStatus: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   return (
-    <View style={{ borderRadius: t.radius.xl, backgroundColor: c.card, padding: 16, gap: 8 }}>
-      <AppText size="md" weight="700">
-        สถานะห้องปฏิบัติงาน
-      </AppText>
-      <View>
+    <View style={{ borderRadius: t.radius.xl, backgroundColor: c.card, padding: 16, gap: 4 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <AppText size="md" weight="700" style={{ flex: 1 }}>
+          สถานะห้องปฏิบัติงาน
+        </AppText>
+        <AppText size="xs" muted mono>
+          {DOCTORS.filter((d) => d.status === 'busy').length}/{DOCTORS.length} ห้อง
+        </AppText>
+      </View>
+      {/* 16 ห้องยาวเกินกว่าจะโชว์หมด — เลื่อนในการ์ด ไม่ดันการ์ดสรุปกะลงไปไกล */}
+      <ScrollView style={{ maxHeight: 296 }} showsVerticalScrollIndicator={false}>
         {DOCTORS.map((d, i) => (
           <View
             key={d.name}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              gap: 8,
-              paddingVertical: 12,
+              gap: 10,
+              paddingVertical: 9,
               borderBottomWidth: i === DOCTORS.length - 1 ? 0 : 1,
               borderBottomColor: t.tones.neutral.bg,
             }}
           >
             <View
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: 32,
+                height: 32,
+                borderRadius: 16,
                 backgroundColor: MINT,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <AppText size="md" weight="600" color={c.secondary}>
+              <AppText size="sm" weight="600" color={c.secondary}>
                 {d.name.replace(/^[^.]*\./, '').slice(0, 2)}
               </AppText>
             </View>
-            <View style={{ flex: 1, gap: 4 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <AppText size="base" weight="500" numberOfLines={1} style={{ flex: 1 }}>
-                  {d.name}
-                </AppText>
-                <Badge
-                  label={d.status === 'busy' ? 'กำลังตรวจ' : 'ว่าง'}
-                  tone={d.status === 'busy' ? 'info' : 'neutral'}
-                  size="sm"
-                />
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <AppText size="sm" weight="600" color={c.primary} mono>
+            <View style={{ flex: 1, gap: 2 }}>
+              <AppText size="sm" weight="600" numberOfLines={1}>
+                {d.name}
+              </AppText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <AppText size="xs" weight="600" color={c.primary} mono>
                   {d.room}
                 </AppText>
                 <AppText size="xs" muted>
-                  •
+                  ·
                 </AppText>
-                <AppText size="sm">{d.roomLabel}</AppText>
+                <AppText size="xs" muted numberOfLines={1}>
+                  {d.roomLabel}
+                </AppText>
               </View>
+            </View>
+            {/* จุดสี + ข้อความ แทนป้ายทึบ — 3 ใน 4 แถวสถานะเดียวกัน ป้ายเต็มใบเลยดังเกินจำเป็น */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <StatusDot color={d.status === 'busy' ? c.info : c.mutedForeground} size={7} />
+              <AppText size="xs" weight="600" color={d.status === 'busy' ? c.info : c.mutedForeground}>
+                {d.status === 'busy' ? 'กำลังตรวจ' : 'ว่าง'}
+              </AppText>
             </View>
           </View>
         ))}
-      </View>
+      </ScrollView>
     </View>
   );
 };
@@ -139,15 +149,26 @@ export const DashboardScreen: React.FC = () => {
 
   const columns: Array<Column<VisitRecord>> = [
     {
+      // จุดยึดสายตาฝั่งซ้าย — เลขคิวคือสิ่งที่เจ้าหน้าที่ใช้เรียกจริง เลยทำเป็นชิปให้เด่นกว่าคอลัมน์อื่น
       key: 'queue',
       title: 'คิว',
-      width: 96,
+      width: 92,
       render: (r) => (
-        <View style={{ gap: 4 }}>
-          <AppText size="base" weight="700" color={c.primary} mono>
-            {r.queueNo}
-          </AppText>
-          <AppText size="sm" muted mono>
+        <View style={{ gap: 3 }}>
+          <View
+            style={{
+              alignSelf: 'flex-start',
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+              borderRadius: t.radius.sm,
+              backgroundColor: t.tones.primary.bg,
+            }}
+          >
+            <AppText size="sm" weight="700" mono color={t.tones.primary.fg}>
+              {r.queueNo}
+            </AppText>
+          </View>
+          <AppText size="xs" muted mono>
             {r.time}
           </AppText>
         </View>
@@ -156,9 +177,9 @@ export const DashboardScreen: React.FC = () => {
     {
       key: 'hn',
       title: 'HN',
-      width: 88,
+      width: 84,
       render: (r) => (
-        <AppText size="sm" weight="600" mono>
+        <AppText size="sm" muted mono>
           {r.hn}
         </AppText>
       ),
@@ -191,29 +212,39 @@ export const DashboardScreen: React.FC = () => {
           </AppText>
         ),
     },
-    { key: 'service', title: 'ประเภทรับบริการ', flex: 1, render: (r) => <AppText size="sm">{r.service}</AppText> },
+    { key: 'service', title: 'ประเภทรับบริการ', flex: 1.1, render: (r) => <AppText size="sm">{r.service}</AppText> },
     {
+      // รหัสห้องเป็นตัวนำ ชื่อห้องเป็นบรรทัดรอง — เข้าชุดกับคอลัมน์คิวและชื่อ
       key: 'room',
       title: 'ห้องตรวจ',
-      width: 138,
+      width: 124,
       render: (r) => (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <AppText size="sm" mono>
+        <View style={{ gap: 3 }}>
+          <AppText size="sm" weight="600" mono>
             {r.room}
           </AppText>
-          <AppText size="xs" muted>
-            •
+          <AppText size="xs" muted numberOfLines={1}>
+            {roomLabel(r.room)}
           </AppText>
-          <AppText size="sm">ห้องตรวจ</AppText>
         </View>
       ),
     },
     {
+      // จุดยึดสายตาฝั่งขวา — สถานะคือสิ่งที่ต้องกวาดหาว่าใครถึงคิวแล้ว
       key: 'status',
       title: 'สถานะ',
-      width: 130,
+      width: 134,
       align: 'right',
-      render: (r) => <Badge label={STAGE_META[r.stage].label} tone={STAGE_META[r.stage].tone} size="sm" />,
+      // Badge มี alignSelf:'flex-start' ในตัว ต้องสั่งทับถึงจะชิดขวาตาม align ของคอลัมน์
+      render: (r) => (
+        <Badge
+          label={STAGE_META[r.stage].label}
+          tone={STAGE_META[r.stage].tone}
+          size="sm"
+          dot
+          style={{ alignSelf: 'flex-end' }}
+        />
+      ),
     },
   ];
 
@@ -227,19 +258,13 @@ export const DashboardScreen: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 12,
-          padding: 16,
-          flexWrap: 'wrap',
-        }}
-      >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}>
         <AppText size="md" weight="700" style={{ flex: 1 }}>
           คิวผู้ป่วยวันนี้
         </AppText>
-        <Button label="อ่านบัตรประชาชน · ลงทะเบียน" onPress={actions.openReg} />
+        <AppText size="sm" muted mono>
+          {state.records.length} ราย
+        </AppText>
       </View>
 
       <DataTable
@@ -247,6 +272,7 @@ export const DashboardScreen: React.FC = () => {
         data={pageRows}
         keyExtractor={(r) => r.hn}
         minWidth={840}
+        striped
         onRowPress={(_, i) => actions.openEncounter((safePage - 1) * pageSize + i)}
         empty={
           <EmptyState
@@ -298,16 +324,26 @@ export const DashboardScreen: React.FC = () => {
             reduceMotion={t.reduceMotion}
           />
         </View>
-        <View style={{ gap: 8, zIndex: 1 }}>
-          <AppText size="base" weight="600" color="#FFFFFF">
-            {thaiToday()}
-          </AppText>
-          <AppText size="xxl" weight="700" color="#FFFFFF">
-            {greeting()}, {state.userName}
-          </AppText>
-          <AppText size="base" color={MINT}>
-            {state.facility.name} • สาขา {state.branch} • ประจำ {state.room}
-          </AppText>
+        {/* ชิดบน — ให้ขอบบนปุ่มอยู่ที่ padding 16 ของการ์ด เสมอกับบรรทัดวันที่ */}
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', zIndex: 1 }}>
+          <View style={{ gap: 8, flex: 1, minWidth: 260 }}>
+            <AppText size="base" weight="600" color="#FFFFFF">
+              {thaiToday()}
+            </AppText>
+            <AppText size="xxl" weight="700" color="#FFFFFF">
+              {greeting()}, {state.userName}
+            </AppText>
+            <AppText size="base" color={MINT}>
+              {state.facility.name} • สาขา {state.branch} • ประจำ {state.room}
+            </AppText>
+          </View>
+          {/* ปุ่มขาวบนพื้นเขียวเข้ม — งานหลักของหน้านี้ อยู่ระดับเดียวกับคำทักทาย */}
+          <Button
+            label="อ่านบัตรประชาชน · ลงทะเบียน"
+            variant="outline"
+            icon={<Ionicons name="card-outline" size={16} color={c.primary} />}
+            onPress={actions.openReg}
+          />
         </View>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, zIndex: 1 }}>
