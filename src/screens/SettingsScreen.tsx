@@ -19,6 +19,32 @@ import {
   useThemeContext,
 } from '../theme';
 import type { DensityId, FontSizeId } from '../theme';
+import type { AlertRequest } from '../state/types';
+
+/** ตัวอย่างกล่องแจ้งสถานะครบ 6 ชนิดตามข้อกำหนด 4.8 */
+const ALERT_SAMPLES: Array<[string, AlertRequest]> = [
+  [
+    'เพิ่ม',
+    { kind: 'add', message: 'บันทึกข้อมูลใหม่เข้าระบบเรียบร้อยแล้ว', detail: 'HN 6800124 · คิว A-001' },
+  ],
+  ['แก้ไข', { kind: 'edit', message: 'ปรับปรุงข้อมูลและบันทึกทับของเดิมเรียบร้อยแล้ว', detail: 'HN 6800124' }],
+  [
+    'ลบ',
+    {
+      kind: 'delete',
+      message: 'รายการที่เลือกจะถูกลบออกจากเครื่องและเรียกคืนไม่ได้',
+      detail: '1 รายการ',
+      cancelLabel: 'ยกเลิก',
+      confirmLabel: 'ลบ',
+    },
+  ],
+  ['ผิดพลาด', { kind: 'error', message: 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', detail: 'ERR_TIMEOUT 504' }],
+  [
+    'พบปัญหา',
+    { kind: 'issue', message: 'มีข้อมูลไม่ครบตามเงื่อนไข ตรวจสอบและแก้ไขก่อนส่งขึ้น Cloud', detail: 'ไม่ผ่าน 8 รายการ' },
+  ],
+  ['เตือน', { kind: 'warning', message: 'ยังไม่ได้ยืนยันตัวตน MOPH SSO — ทำรายการนี้ต่อไม่ได้จนกว่าจะเข้าสู่ระบบ' }],
+];
 
 const Swatches: React.FC<{ colors: [string, string, string, string] }> = ({ colors }) => {
   const t = useTheme();
@@ -270,6 +296,15 @@ export const SettingsScreen: React.FC = () => {
           <AppText size="xs" muted>
             ระบบจะปิดการเคลื่อนไหวอัตโนมัติเมื่อเครื่องตั้งค่า “ลดการเคลื่อนไหว” (prefers-reduced-motion)
           </AppText>
+        </View>
+      </SectionCard>
+
+      {/* กล่องแจ้งสถานะ — ที่รวมตัวอย่างครบทั้ง 6 ชนิดสำหรับตรวจรับงาน (ข้อกำหนด 4.8) */}
+      <SectionCard title="กล่องแจ้งสถานะ (Alert Dialog)" caption="กดเพื่อดูตัวอย่างแต่ละสถานะ">
+        <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+          {ALERT_SAMPLES.map(([label, req]) => (
+            <Button key={label} label={label} variant="outline" size="sm" onPress={() => actions.showAlert(req)} />
+          ))}
         </View>
       </SectionCard>
     </ScrollView>

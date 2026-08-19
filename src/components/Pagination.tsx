@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { AnimatedPressable, usePressScale, webFocusRing } from './usePressScale';
 
 const ROW_H = 34;
 
@@ -27,11 +28,13 @@ const PageDot: React.FC<{
 }> = ({ children, active = false, soft = false, disabled = false, onPress }) => {
   const t = useTheme();
   const c = t.colors;
+  const press = usePressScale(0.9);
   return (
-    <Pressable
+    <AnimatedPressable
+      {...(disabled ? {} : press.handlers)}
       onPress={disabled ? undefined : onPress}
       disabled={disabled || !onPress}
-      style={({ pressed }) => [
+      style={[
         {
           width: 32,
           height: 32,
@@ -39,13 +42,14 @@ const PageDot: React.FC<{
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: active ? c.primary : soft ? c.surface2 : c.card,
-          opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
+          opacity: disabled ? 0.4 : 1,
         },
-        WEB_NO_OUTLINE,
+        disabled ? null : press.pressStyle,
+        webFocusRing(c.ring),
       ]}
     >
       {children}
-    </Pressable>
+    </AnimatedPressable>
   );
 };
 

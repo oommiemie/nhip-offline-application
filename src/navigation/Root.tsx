@@ -13,6 +13,7 @@ import { EditRecordModal } from '../modals/EditRecordModal';
 import { OpdCardModal } from '../modals/OpdCardModal';
 import { HistoryPanel } from '../modals/HistoryPanel';
 import { SsoModal } from '../modals/SsoModal';
+import { AlertHost } from '../modals/AlertHost';
 
 /** สลับหน้าจอหลักตาม state (login → setup → app) — ไม่ใช้ external navigator เพื่อให้พอร์ตง่าย */
 export const Root: React.FC = () => {
@@ -26,6 +27,7 @@ export const Root: React.FC = () => {
       <>
         <SetupScreen />
         <SsoModal />
+        <AlertHost />
       </>
     );
 
@@ -42,6 +44,7 @@ export const Root: React.FC = () => {
       <OpdCardModal />
       <HistoryPanel />
       <SsoModal />
+      <AlertHost />
     </>
   );
 };

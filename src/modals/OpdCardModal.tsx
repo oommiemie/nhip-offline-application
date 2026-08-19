@@ -3,19 +3,11 @@ import { View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { AlertBand, AppModal, AppText, Avatar, Badge, Button } from '../components';
+import { AlertBand, AppModal, AppText, Avatar, Badge, Button, InfoCard } from '../components';
 import { useApp } from '../state/AppContext';
 import { useTheme, withAlpha } from '../theme';
 import type { VisitRecord } from '../state/types';
-import { thaiToday } from '../utils/format';
-
-/** คำนำหน้าที่ตัดออกก่อนทำอักษรย่อในวงกลม */
-const TITLES = ['นางสาว', 'เด็กชาย', 'เด็กหญิง', 'ด.ช.', 'ด.ญ.', 'น.ส.', 'นาง', 'นาย', 'พระ'];
-
-const initials = (name: string): string => {
-  const bare = TITLES.reduce((s, p) => (s.startsWith(p) ? s.slice(p.length) : s), name.trim());
-  return (bare.replace(/\s/g, '') || name).slice(0, 2);
-};
+import { initials, thaiToday } from '../utils/format';
 
 /** หน่วยของสัญญาณชีพแต่ละตัว (คีย์ตรงกับ mockData) */
 const VITAL_UNITS: Record<string, string> = {
@@ -77,57 +69,6 @@ const Pill: React.FC<{ label: string; mono?: boolean; icon?: keyof typeof Ionico
       <AppText size="xs" weight="600" mono={mono} color={c.primaryStrong}>
         {label}
       </AppText>
-    </View>
-  );
-};
-
-/** การ์ดหัวข้อของ OPD Card — ไอคอนวงกลม + ชื่อหัวข้อ + จำนวนรายการ */
-const InfoCard: React.FC<{
-  title: string;
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  count?: number;
-  children: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-}> = ({ title, icon, count, children, style }) => {
-  const t = useTheme();
-  const c = t.colors;
-  return (
-    <View
-      style={[
-        {
-          gap: 12,
-          padding: 14,
-          borderRadius: t.radius.lg,
-          backgroundColor: c.card,
-          borderWidth: 1,
-          borderColor: c.border,
-        },
-        style,
-      ]}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-        <View
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 9,
-            backgroundColor: t.tones.primary.bg,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <MaterialCommunityIcons name={icon} size={16} color={t.tones.primary.fg} />
-        </View>
-        <AppText size="md" weight="700" style={{ flex: 1 }}>
-          {title}
-        </AppText>
-        {count !== undefined ? (
-          <AppText size="xs" weight="600" mono muted>
-            {count} รายการ
-          </AppText>
-        ) : null}
-      </View>
-      {children}
     </View>
   );
 };

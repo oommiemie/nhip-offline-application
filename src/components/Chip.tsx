@@ -1,9 +1,10 @@
 import React from 'react';
-import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { AnimatedPressable, usePressScale, webFocusRing } from './usePressScale';
 
 export interface ChipProps {
   label: string;
@@ -33,8 +34,10 @@ export const Chip: React.FC<ChipProps> = ({
   const c = t.colors;
   const tone = t.tones.primary;
   const fg = active ? tone.fg : accent ? c.ring : c.mutedForeground;
+  const press = usePressScale(0.95);
   return (
-    <Pressable
+    <AnimatedPressable
+      {...(onPress ? press.handlers : {})}
       onPress={onPress}
       disabled={!onPress}
       style={[
@@ -49,6 +52,8 @@ export const Chip: React.FC<ChipProps> = ({
           borderWidth: 1,
           borderColor: active ? tone.border : accent ? c.ring : c.border,
         },
+        onPress ? press.pressStyle : null,
+        webFocusRing(c.ring),
         style,
       ]}
     >
@@ -62,7 +67,7 @@ export const Chip: React.FC<ChipProps> = ({
           {count}
         </AppText>
       ) : null}
-    </Pressable>
+    </AnimatedPressable>
   );
 };
 
@@ -121,6 +126,36 @@ export const StepperChips: React.FC<{ steps: StepChipItem[]; style?: StyleProp<V
   );
 };
 
+/** ปุ่มลูกของ SegmentedPills — แยกออกมาเพื่อให้แต่ละปุ่มมีอนิเมชันกดของตัวเอง */
+const SegPill: React.FC<{ label: string; active: boolean; onPress: () => void }> = ({ label, active, onPress }) => {
+  const t = useTheme();
+  const c = t.colors;
+  const press = usePressScale(0.94);
+  return (
+    <AnimatedPressable
+      {...press.handlers}
+      onPress={onPress}
+      style={[
+        {
+          height: 30,
+          paddingHorizontal: 14,
+          borderRadius: t.radius.pill,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: active ? c.card : 'transparent',
+        },
+        active ? t.shadow.sm : null,
+        press.pressStyle,
+        webFocusRing(c.ring),
+      ]}
+    >
+      <AppText size="sm" weight={active ? '600' : '400'} color={active ? c.foreground : c.mutedForeground}>
+        {label}
+      </AppText>
+    </AnimatedPressable>
+  );
+};
+
 export interface SegmentedOption<V extends string> {
   value: V;
   label: string;
@@ -147,30 +182,9 @@ export function SegmentedPills<V extends string>({
         style,
       ]}
     >
-      {options.map((o) => {
-        const on = o.value === value;
-        return (
-          <Pressable
-            key={o.value}
-            onPress={() => onChange(o.value)}
-            style={[
-              {
-                height: 30,
-                paddingHorizontal: 14,
-                borderRadius: t.radius.pill,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: on ? c.card : 'transparent',
-              },
-              on ? t.shadow.sm : null,
-            ]}
-          >
-            <AppText size="sm" weight={on ? '600' : '400'} color={on ? c.foreground : c.mutedForeground}>
-              {o.label}
-            </AppText>
-          </Pressable>
-        );
-      })}
+      {options.map((o) => (
+        <SegPill key={o.value} label={o.label} active={o.value === value} onPress={() => onChange(o.value)} />
+      ))}
     </View>
   );
-}
+};

@@ -50,3 +50,12 @@ export const formatPhone = (input: string): string => {
 
 /** จำนวนหลักของเบอร์โทร (ใช้ตรวจความครบถ้วน — เบอร์บ้าน 9 หลัก มือถือ 10 หลัก) */
 export const phoneDigits = (input: string): number => input.replace(/\D/g, '').length;
+
+/** คำนำหน้าที่ตัดออกก่อนทำอักษรย่อในวงกลม */
+const NAME_TITLES = ['นางสาว', 'เด็กชาย', 'เด็กหญิง', 'ด.ช.', 'ด.ญ.', 'น.ส.', 'นาง', 'นาย', 'พระ'];
+
+/** อักษรย่อ 2 ตัวจากชื่อผู้ป่วย/เจ้าหน้าที่ (ตัดคำนำหน้าออกก่อน) */
+export const initials = (name: string): string => {
+  const bare = NAME_TITLES.reduce((s, p) => (s.startsWith(p) ? s.slice(p.length) : s), name.trim());
+  return (bare.replace(/\s/g, '') || name).slice(0, 2);
+};

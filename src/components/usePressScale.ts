@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, Pressable } from 'react-native';
+import { Animated, Easing, Platform, Pressable, type ViewStyle } from 'react-native';
 
 import { useTheme } from '../theme';
 
 const NATIVE = Platform.OS !== 'web';
+
+/**
+ * วงโฟกัสบนเว็บ — เปลี่ยนสีเริ่มต้นของเบราว์เซอร์ (ฟ้า/ดำ) เป็นสีเขียวของธีม
+ * ไม่กำหนด outlineStyle/Width เอง เพื่อให้เบราว์เซอร์วาดเฉพาะตอนโฟกัสจริง และโค้งตามมุมปุ่มให้อัตโนมัติ
+ */
+export const webFocusRing = (color: string): ViewStyle | null =>
+  Platform.OS === 'web' ? ({ outlineColor: color, outlineOffset: 2 } as unknown as ViewStyle) : null;
 
 /** Pressable ที่รับ Animated style ได้ตรง ๆ ไม่ต้องห่อ View เพิ่ม (กัน layout เพี้ยน) */
 export const AnimatedPressable = Animated.createAnimatedComponent(Pressable);

@@ -1,71 +1,74 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import {
+  AnimatedPressable,
   AppText,
+  Avatar,
   Badge,
   Button,
   Card,
   DataTable,
   EmptyState,
+  Pagination,
   SelectField,
   TextField,
+  usePressScale,
+  webFocusRing,
 } from '../components';
 import type { Column } from '../components';
 import { STAGE_META } from '../state/mockData';
 import { useApp } from '../state/AppContext';
-import type { VisitRecord } from '../state/types';
-import { useTheme } from '../theme';
+import type { QueueStage, VisitRecord } from '../state/types';
+import { useTheme, withAlpha } from '../theme';
+import { initials } from '../utils/format';
 
-/** ชิปสรุปขั้นตอนบริการ 6 ขั้น (1·ลงทะเบียน ▸ … ▸ 6·เสร็จสิ้น) */
-const FlowChips: React.FC = () => {
+type StageFilter = 'all' | QueueStage;
+
+/** ชิปกรองสถานะคิว — พื้นสีอ่อนของสถานะ กดแล้วพื้นเต็มสีตัวอักษรขาว */
+const StageChip: React.FC<{
+  label: string;
+  count: number;
+  active: boolean;
+  tone: string;
+  onPress: () => void;
+}> = ({ label, count, active, tone, onPress }) => {
   const t = useTheme();
-  const { state, derived } = useApp();
-  const rs = state.records;
-  const steps: Array<[string, number, boolean]> = [
-    ['1 · ลงทะเบียน', rs.length, true],
-    ['2 · ซักประวัติ', rs.filter((r) => r.fHist).length, false],
-    ['3 · ตรวจรักษา', rs.filter((r) => r.icd.length > 0).length, false],
-    ['4 · Lab', rs.filter((r) => r.fLab || r.fXray).length, false],
-    ['5 · รับยา', rs.filter((r) => r.fDrug).length, false],
-    ['6 · เสร็จสิ้น', derived.doneCount, false],
-  ];
+  const c = t.colors;
+  const press = usePressScale(0.95);
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, alignItems: 'center' }}>
-      <AppText size="xs" muted style={{ marginRight: 4 }}>
-        ขั้นตอนบริการ
+    <AnimatedPressable
+      {...press.handlers}
+      onPress={onPress}
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+          height: 38,
+          paddingHorizontal: 14,
+          borderRadius: t.radius.pill,
+          borderWidth: 1,
+          borderColor: active ? tone : withAlpha(tone, 0.22),
+          backgroundColor: active ? tone : withAlpha(tone, 0.07),
+        },
+        press.pressStyle,
+        webFocusRing(c.ring),
+      ]}
+    >
+      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: active ? '#FFFFFF' : tone }} />
+      <AppText size="sm" weight={active ? '700' : '500'} color={active ? '#FFFFFF' : c.foreground}>
+        {label}
       </AppText>
-      {steps.map(([label, n, primary], i) => (
-        <React.Fragment key={label}>
-          {i > 0 ? <Ionicons name="chevron-forward" size={12} color={t.colors.mutedForeground} /> : null}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
-              height: 28,
-              paddingHorizontal: 11,
-              borderRadius: t.radius.pill,
-              backgroundColor: primary ? t.colors.primary : t.colors.card,
-              borderWidth: 1,
-              borderColor: primary ? t.colors.primary : t.colors.border,
-            }}
-          >
-            <AppText size="xs" weight={primary ? '600' : '400'} color={primary ? t.colors.primaryForeground : t.colors.foreground}>
-              {label}
-            </AppText>
-            <AppText size="xs" weight="600" mono color={primary ? t.colors.primaryForeground : t.colors.mutedForeground}>
-              {n}
-            </AppText>
-          </View>
-        </React.Fragment>
-      ))}
-    </ScrollView>
+      <AppText size="sm" weight="700" mono color={active ? '#FFFFFF' : tone}>
+        {count}
+      </AppText>
+    </AnimatedPressable>
   );
 };
 
-/** หน้า 03 — One Stop Service · รายการรับบริการ */
+/** หน้า 03 — One Stop Service · รายการรับบริการ (ค้นหา → กรองสถานะ → เปิดบันทึก) */
 export const PatientListScreen: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
@@ -73,167 +76,263 @@ export const PatientListScreen: React.FC = () => {
   const { width } = useWindowDimensions();
   const wide = width >= 980;
 
-  const [qId, setQId] = useState('');
-  const [qName, setQName] = useState('');
+  const [q, setQ] = useState('');
+  const [stage, setStage] = useState<StageFilter>('all');
+  const [more, setMore] = useState(false);
   const [right, setRight] = useState('ทั้งหมด');
   const [village, setVillage] = useState('ทั้งหมด');
   const [lastVisit, setLastVisit] = useState('ไม่จำกัด');
 
+  /** ช่องเดียวค้นได้ทั้ง HN · เลขบัตร · ชื่อ — เจ้าหน้าที่ไม่ต้องเลือกก่อนว่าจะค้นด้วยอะไร */
   const filtered = useMemo(() => {
+    const key = q.trim();
+    const digits = key.replace(/\D/g, '');
     return state.records
       .map((r, i) => ({ r, i }))
       .filter(({ r }) => {
-        if (qId && !(r.hn.includes(qId) || r.cid.replace(/-/g, '').includes(qId.replace(/-/g, '')))) return false;
-        if (qName && !r.name.includes(qName)) return false;
+        if (key) {
+          const hit =
+            r.name.includes(key) ||
+            r.hn.includes(digits) ||
+            (digits.length >= 4 && r.cid.replace(/-/g, '').includes(digits));
+          if (!hit) return false;
+        }
+        if (stage !== 'all' && r.stage !== stage) return false;
         if (right !== 'ทั้งหมด' && r.right !== right) return false;
         return true;
       });
-  }, [state.records, qId, qName, right]);
+  }, [state.records, q, stage, right]);
+
+  // แบ่งหน้า — index ที่ใช้เปิดหน้าตรวจติดมากับแต่ละแถวอยู่แล้ว (x.i) จึงไม่ต้องบวก offset
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = useMemo(
+    () => filtered.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filtered, safePage, pageSize],
+  );
+  // เปลี่ยนคำค้น/ตัวกรองแล้วต้องกลับไปหน้าแรกเสมอ ไม่งั้นจะเห็นหน้าว่าง
+  useEffect(() => {
+    setPage(1);
+  }, [q, stage, right]);
+
+  /** สีประจำสถานะคิว — ใช้ทั้งแถบซ้ายของแถว วงอักษรย่อ และชิปกรอง */
+  const stageColor = (st: QueueStage) => t.tones[STAGE_META[st].tone].fg;
+
+  const countOf = (s: StageFilter) =>
+    s === 'all' ? state.records.length : state.records.filter((r) => r.stage === s).length;
+
+  // ครบทุกสถานะที่คิวเป็นไปได้ — ไม่มีคนไข้ตกหล่นจากตัวกรอง
+  const stageChips: Array<[StageFilter, string, string]> = [
+    ['all', 'ทั้งหมด', c.primary],
+    ['wait', STAGE_META.wait.label, t.tones.warning.fg],
+    ['screen', STAGE_META.screen.label, t.tones.info.fg],
+    ['pending', STAGE_META.pending.label, t.tones.warning.fg],
+    ['lab', STAGE_META.lab.label, t.tones.purple.fg],
+    ['done', STAGE_META.done.label, t.tones.success.fg],
+  ];
 
   const columns: Array<Column<{ r: VisitRecord; i: number }>> = [
-    { key: 'hn', title: 'HN', width: 92, render: ({ r }) => <AppText size="sm" mono>{r.hn}</AppText> },
     {
-      key: 'name',
-      title: 'ชื่อ-นามสกุล',
-      flex: 1.4,
+      key: 'patient',
+      title: 'ผู้ป่วย',
+      flex: 1.6,
       render: ({ r }) => (
-        <AppText size="sm" weight="600" numberOfLines={1}>
-          {r.name}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+          {/* แถบสีบอกสถานะคิว — กวาดตาลงคอลัมน์เดียวก็รู้ว่างานอยู่ขั้นไหน */}
+          <View style={{ width: 4, height: 36, borderRadius: 2, backgroundColor: stageColor(r.stage) }} />
+          <Avatar
+            label={initials(r.name)}
+            size={34}
+            bg={withAlpha(stageColor(r.stage), 0.14)}
+            fg={stageColor(r.stage)}
+          />
+          <View style={{ gap: 1, flex: 1 }}>
+            <AppText size="sm" weight="700" numberOfLines={1}>
+              {r.name}
+            </AppText>
+            <AppText size="xs" muted numberOfLines={1}>
+              HN <AppText size="xs" mono muted>{r.hn}</AppText> · {r.sex} {r.age} ปี · {r.right}
+            </AppText>
+          </View>
+        </View>
+      ),
+    },
+    {
+      key: 'warn',
+      title: 'ข้อควรระวัง',
+      width: 190,
+      // แสดงเฉพาะเมื่อมีข้อมูลจริง — แถวที่ไม่มีอะไรต้องระวังปล่อยว่างไว้ให้สายตาพัก
+      render: ({ r }) => {
+        const chronic = r.chronic && r.chronic !== '—' ? r.chronic : '';
+        if (!r.allergy && !chronic) {
+          return (
+            <AppText size="sm" muted>
+              –
+            </AppText>
+          );
+        }
+        return (
+          <View style={{ gap: 3 }}>
+            {r.allergy ? <Badge label={`แพ้ ${r.allergy}`} tone="destructive" size="sm" /> : null}
+            {chronic ? (
+              <AppText size="xs" muted numberOfLines={1}>
+                โรคประจำตัว {chronic}
+              </AppText>
+            ) : null}
+          </View>
+        );
+      },
+    },
+    {
+      key: 'time',
+      title: 'มาถึง',
+      width: 76,
+      align: 'right',
+      render: ({ r }) => (
+        <AppText size="sm" mono>
+          {r.time}
         </AppText>
       ),
     },
-    { key: 'sex', title: 'เพศ', width: 52, render: ({ r }) => <AppText size="sm">{r.sex === 'หญิง' ? 'ญ' : 'ช'}</AppText> },
-    { key: 'age', title: 'อายุ', width: 56, align: 'right', render: ({ r }) => <AppText size="sm" mono>{r.age}</AppText> },
-    { key: 'cid', title: 'เลขบัตรประชาชน', width: 152, render: ({ r }) => <AppText size="xs" mono>{r.cid}</AppText> },
-    { key: 'right', title: 'สิทธิ์', width: 116, render: ({ r }) => <AppText size="sm" numberOfLines={1}>{r.right}</AppText> },
-    { key: 'chronic', title: 'โรคประจำตัว', width: 128, render: ({ r }) => <AppText size="sm" numberOfLines={1}>{r.chronic}</AppText> },
-    {
-      key: 'allergy',
-      title: 'แพ้ยา',
-      width: 116,
-      render: ({ r }) =>
-        r.allergy ? <Badge label={r.allergy} tone="destructive" size="sm" /> : <AppText size="sm" muted>–</AppText>,
-    },
-    { key: 'time', title: 'มาล่าสุด', width: 76, align: 'right', render: ({ r }) => <AppText size="sm" mono>{r.time}</AppText> },
     {
       key: 'status',
       title: 'สถานะ',
-      width: 122,
+      width: 128,
       render: ({ r }) => <Badge label={STAGE_META[r.stage].label} tone={STAGE_META[r.stage].tone} size="sm" />,
+    },
+    {
+      key: 'go',
+      title: '',
+      width: 132,
+      align: 'right',
+      render: ({ i }) => (
+        <Button
+          label="เปิดบันทึก"
+          variant="outline"
+          size="sm"
+          iconRight={<Ionicons name="chevron-forward" size={14} color={c.primary} />}
+          onPress={() => actions.openEncounter(i)}
+        />
+      ),
     },
   ];
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
-        <View style={{ flex: 1, minWidth: 240, gap: 2 }}>
-          <AppText size="xl" weight="700">
-            รายการรับบริการวันนี้
-          </AppText>
-          <AppText size="xs" muted>
-            {state.records.length} ราย · ข้อมูลเก็บในเครื่องแบบเข้ารหัส ไม่แสดงข้อมูลย้อนหลังจากเครื่องอื่น
-          </AppText>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+      {/* แผงควบคุมงานประจำวัน — ค้นหา · กรอง · รับคนใหม่ รวมอยู่ในกล่องเดียว */}
+      <Card rounded="xl" padded={0}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, flexWrap: 'wrap' }}>
+          <TextField
+            value={q}
+            onChangeText={setQ}
+            placeholder="ค้นหา HN · เลขบัตรประชาชน · ชื่อ-นามสกุล"
+            icon="search-outline"
+            containerStyle={{ flex: 1, minWidth: 240, maxWidth: 460 }}
+          />
           <Button
-            label="ล้างตัวกรอง"
-            variant="outline"
-            size="sm"
-            onPress={() => {
-              setQId('');
-              setQName('');
-              setRight('ทั้งหมด');
-              setVillage('ทั้งหมด');
-              setLastVisit('ไม่จำกัด');
-            }}
+            label={more ? 'ซ่อนตัวกรอง' : 'ตัวกรอง'}
+            variant={more ? 'subtle' : 'outline'}
+            icon={<Ionicons name="options-outline" size={16} color={more ? c.foreground : c.primary} />}
+            onPress={() => setMore((v) => !v)}
           />
-          <Button label="อ่านบัตรประชาชน · ลงทะเบียน" size="sm" onPress={actions.openReg} />
+          <View style={{ flex: 1, minWidth: 4 }} />
+          <AppText size="xs" mono muted>
+            แสดง {filtered.length} / {state.records.length} ราย
+          </AppText>
+          <Button
+            label="ลงทะเบียนคนไข้ใหม่"
+            icon={<Ionicons name="card-outline" size={16} color={c.primaryForeground} />}
+            onPress={actions.openReg}
+          />
         </View>
-      </View>
 
-      <FlowChips />
+        {more ? (
+          <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
+            <View style={{ flexDirection: wide ? 'row' : 'column', gap: 10 }}>
+              <SelectField
+                label="สิทธิ์การรักษา"
+                value={right}
+                options={['ทั้งหมด', 'บัตรทอง (UC)', 'ประกันสังคม', 'ข้าราชการ', 'ชำระเงินเอง']}
+                onChange={setRight}
+                containerStyle={{ flex: 1 }}
+              />
+              <SelectField
+                label="หมู่บ้าน / เขตรับผิดชอบ"
+                value={village}
+                options={['ทั้งหมด', 'ม.1 บ้านโนนสูง', 'ม.4 บ้านหนองแวง']}
+                onChange={setVillage}
+                containerStyle={{ flex: 1 }}
+              />
+              <SelectField
+                label="มารับบริการล่าสุด"
+                value={lastVisit}
+                options={['ไม่จำกัด', 'ภายใน 30 วัน', 'ภายใน 1 ปี']}
+                onChange={setLastVisit}
+                containerStyle={{ flex: 1 }}
+              />
+            </View>
+          </View>
+        ) : null}
 
-      {/* ตัวกรอง */}
-      <Card rounded="xl" padded={14}>
-        <View style={{ flexDirection: wide ? 'row' : 'column', gap: 10 }}>
-          <TextField
-            label="HN / เลขบัตรประชาชน"
-            value={qId}
-            onChangeText={setQId}
-            placeholder="พิมพ์หรือสแกนบัตร"
-            mono
-            containerStyle={{ flex: 1.1 }}
-          />
-          <TextField
-            label="ชื่อ / นามสกุล"
-            value={qName}
-            onChangeText={setQName}
-            placeholder="เช่น สมพร แก้วใส"
-            containerStyle={{ flex: 1.1 }}
-          />
-          <SelectField
-            label="สิทธิ์การรักษา"
-            value={right}
-            options={['ทั้งหมด', 'บัตรทอง (UC)', 'ประกันสังคม', 'ข้าราชการ', 'ชำระเงินเอง']}
-            onChange={setRight}
-            containerStyle={{ flex: 1 }}
-          />
-          <SelectField
-            label="หมู่บ้าน / เขตรับผิดชอบ"
-            value={village}
-            options={['ทั้งหมด', 'ม.1 บ้านโนนสูง', 'ม.4 บ้านหนองแวง']}
-            onChange={setVillage}
-            containerStyle={{ flex: 1 }}
-          />
-          <SelectField
-            label="มารับบริการล่าสุด"
-            value={lastVisit}
-            options={['ไม่จำกัด', 'ภายใน 30 วัน', 'ภายใน 1 ปี']}
-            onChange={setLastVisit}
-            containerStyle={{ flex: 1 }}
-          />
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', paddingHorizontal: 14, paddingBottom: 14 }}>
+          {stageChips.map(([id, label, tone]) => (
+            <StageChip
+              key={id}
+              label={label}
+              count={countOf(id)}
+              tone={tone}
+              active={stage === id}
+              onPress={() => setStage(id)}
+            />
+          ))}
         </View>
       </Card>
 
-      {/* ตาราง */}
       <Card rounded="xl" padded={0}>
         <DataTable
           columns={columns}
-          data={filtered}
+          data={pageRows}
           keyExtractor={({ r }) => r.hn}
-          minWidth={1030}
-          selectedIndex={state.curIdx !== null ? filtered.findIndex((x) => x.i === state.curIdx) : null}
+          minWidth={860}
+          selectedIndex={state.curIdx !== null ? pageRows.findIndex((x) => x.i === state.curIdx) : null}
           onRowPress={({ i }) => actions.openEncounter(i)}
           empty={
             <EmptyState
               icon="card-outline"
-              title="เริ่มเวรกะนี้ใหม่ — ยังไม่มีรายการรับบริการ"
-              subtitle="อ่านบัตรประชาชนเพื่อเปิดคิวคนไข้รายแรก หรือปรับตัวกรองการค้นหา"
-              actionLabel="อ่านบัตรประชาชน · ลงทะเบียนคนไข้"
-              onAction={actions.openReg}
+              title={q || stage !== 'all' ? 'ไม่พบคนไข้ตามเงื่อนไขที่ค้น' : 'ยังไม่มีรายการรับบริการในกะนี้'}
+              subtitle={
+                q || stage !== 'all'
+                  ? 'ลองล้างคำค้นหรือเลือกสถานะ “ทั้งหมด”'
+                  : 'อ่านบัตรประชาชนเพื่อเปิดคิวคนไข้รายแรกของวัน'
+              }
+              actionLabel={q || stage !== 'all' ? 'ล้างการค้นหา' : 'อ่านบัตรประชาชน · ลงทะเบียน'}
+              onAction={
+                q || stage !== 'all'
+                  ? () => {
+                      setQ('');
+                      setStage('all');
+                    }
+                  : actions.openReg
+              }
             />
           }
         />
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 14,
-            paddingVertical: 9,
-            borderTopWidth: 1,
-            borderTopColor: c.border,
-            backgroundColor: c.surface2,
-            gap: 10,
-          }}
-        >
-          <AppText size="xs" muted>
-            {state.curIdx !== null ? 'เลือกอยู่ 1 รายการ' : 'แตะรายการเพื่อเปิดหน้าตรวจรักษา'}
-          </AppText>
-          <View style={{ flex: 1 }} />
-          <AppText size="xs" mono muted>
-            แสดง {filtered.length} / {state.records.length} รายการ
-          </AppText>
-        </View>
+        {filtered.length ? (
+          <View style={{ borderTopWidth: 1, borderTopColor: c.border }}>
+            <Pagination
+              page={safePage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              onPageSizeChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+            />
+          </View>
+        ) : null}
       </Card>
     </ScrollView>
   );

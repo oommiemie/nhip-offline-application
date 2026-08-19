@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useApp } from '../state/AppContext';
 import { useTheme, withAlpha } from '../theme';
-import { AnimatedPressable, AppText, StatusDot, Tooltip, useHoverFade, usePressScale } from '../components';
+import { AmbientBackground, AnimatedPressable, AppText, StatusDot, Tooltip, useHoverFade, usePressScale } from '../components';
 import { NAV, type NavDef } from './navItems';
 import { Spotlight } from '../modals/Spotlight';
 import { NoticeBell } from '../modals/NoticePanel';
@@ -386,14 +386,26 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const desktop = layout !== 'phone';
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: desktop ? c.sidebar : c.background }}>
+      {/* แสงเขียวลอยวนบนพื้นหลังหลัก (พื้นมิ้นต์รอบนอก) — แผงเนื้อหาทึบลอยทับ */}
+      <AmbientBackground />
       <View style={{ flex: 1, flexDirection: 'row', padding: desktop ? 8 : 0 }}>
         {sidebar}
         <View
           style={{
             flex: 1,
-            backgroundColor: c.background,
+            // กระจกฝ้าขาวขุ่น: ขาวหนาขึ้น เห็นแสงเขียวด้านหลังเพียงราง ๆ (เว็บ) · native ใกล้ทึบ
+            backgroundColor:
+              Platform.OS === 'web'
+                ? withAlpha(t.isDark ? c.background : '#FFFFFF', t.isDark ? 0.78 : 0.84)
+                : withAlpha(c.background, 0.96),
             borderRadius: desktop ? t.radius.xl : 0,
             overflow: 'hidden',
+            ...(Platform.OS === 'web'
+              ? ({
+                  backdropFilter: 'blur(34px) saturate(1.25)',
+                  WebkitBackdropFilter: 'blur(34px) saturate(1.25)',
+                } as unknown as import('react-native').ViewStyle)
+              : null),
           }}
         >
           <TopBar showLogo={layout === 'phone'} onSearch={() => setSpotlight(true)} />

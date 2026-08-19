@@ -1,29 +1,158 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, useWindowDimensions } from 'react-native';
+import { Platform, ScrollView, TextInput, View, useWindowDimensions, type TextStyle, type ViewStyle } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import {
-  AlertBand,
   AppText,
+  Avatar,
   Badge,
   Button,
   Card,
   EmptyState,
-  SectionCard,
+  IconBtn,
+  InfoCard,
   TextField,
+  webFocusRing,
 } from '../components';
 import { useApp } from '../state/AppContext';
-import { useTheme } from '../theme';
+import { useTheme, withAlpha } from '../theme';
+import { initials } from '../utils/format';
 
 const vitalOf = (vitals: Array<[string, string]>, key: string): string =>
   vitals.find(([k]) => k === key)?.[1] ?? '';
 
-/** หน้า 04 — ซักประวัติ / ตรวจรักษา (encounter) */
+/** ชิปมิ้นต์ใต้ชื่อผู้ป่วย (HN · สิทธิ์ · บริการ) ตาม Figma 40:52173 */
+const MintChip: React.FC<{ label: string; mono?: boolean }> = ({ label, mono = false }) => {
+  const t = useTheme();
+  return (
+    <View
+      style={{
+        height: 29,
+        justifyContent: 'center',
+        paddingHorizontal: 12,
+        borderRadius: t.radius.pill,
+        backgroundColor: t.tones.primary.bg,
+      }}
+    >
+      <AppText size="sm" weight="600" mono={mono} color={t.colors.primaryStrong}>
+        {label}
+      </AppText>
+    </View>
+  );
+};
+
+/** ป้ายค่าคงที่ในการ์ดผู้ป่วย (เพศ / อายุ / หมู่เลือด) */
+const MiniTile: React.FC<{ label: string; value: string }> = ({ label, value }) => {
+  const t = useTheme();
+  return (
+    <View style={{ flex: 1, gap: 2, paddingHorizontal: 12, paddingVertical: 9, borderRadius: t.radius.md, backgroundColor: t.colors.inputBg }}>
+      <AppText size="xs" muted numberOfLines={1}>
+        {label}
+      </AppText>
+      <AppText size="sm" weight="600" numberOfLines={1}>
+        {value || '—'}
+      </AppText>
+    </View>
+  );
+};
+
+/** การ์ดข้อมูลฝั่งซ้าย: หัวข้อมีแถบสีนำ + เส้นคั่น + เนื้อหา */
+const BarCard: React.FC<{ title: string; danger?: boolean; children: React.ReactNode }> = ({
+  title,
+  danger = false,
+  children,
+}) => {
+  const t = useTheme();
+  const c = t.colors;
+  const fg = danger ? c.alertBandForeground : c.foreground;
+  return (
+    <Card
+      rounded="xl"
+      padded={0}
+      shadow="md"
+      style={[{ borderWidth: 0 }, danger ? { backgroundColor: c.alertBand } : null]}
+    >
+      {/* หัวข้อไม่มีเส้นคั่น — เว้นจังหวะด้วยช่องไฟแทน */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
+        <View style={{ width: 3, height: 17, borderRadius: 2, backgroundColor: danger ? '#FFFFFF' : c.primary }} />
+        <AppText size="md" weight="700" color={fg}>
+          {title}
+        </AppText>
+      </View>
+      <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>{children}</View>
+    </Card>
+  );
+};
+
+/** ช่องกรอกค่าตรวจ — ป้ายด้านบน กล่องเทา ค่าอยู่ซ้าย หน่วยชิดขวาในกล่อง (ตาม Figma) */
+const VitalField: React.FC<{
+  label: string;
+  unit: string;
+  value: string;
+  onChangeText?: (v: string) => void;
+  readonly?: boolean;
+  bad?: boolean;
+  flex?: number;
+  minWidth?: number;
+  children?: React.ReactNode;
+}> = ({ label, unit, value, onChangeText, readonly = false, bad = false, flex = 1, minWidth = 118, children }) => {
+  const t = useTheme();
+  const c = t.colors;
+  return (
+    <View style={{ flex, minWidth, gap: 7 }}>
+      <AppText size="sm" weight="600" numberOfLines={1}>
+        {label}
+      </AppText>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          height: 44,
+          paddingHorizontal: 12,
+          borderRadius: t.radius.md,
+          backgroundColor: c.inputBg,
+          borderWidth: 1.5,
+          borderColor: bad ? withAlpha(c.destructive, 0.5) : 'transparent',
+        }}
+      >
+        {children ?? (
+          <TextInput
+            value={value}
+            onChangeText={onChangeText}
+            editable={!readonly}
+            placeholder="—"
+            placeholderTextColor={c.mutedForeground}
+            keyboardType="numeric"
+            inputMode="numeric"
+            style={[
+              {
+                flex: 1,
+                minWidth: 0,
+                paddingVertical: 0,
+                fontFamily: t.mono('600'),
+                fontSize: t.fs.md,
+                color: bad ? c.destructive : readonly ? c.mutedForeground : c.foreground,
+              },
+              webFocusRing(c.ring) as TextStyle,
+            ]}
+          />
+        )}
+        <AppText size="xs" muted>
+          {unit}
+        </AppText>
+      </View>
+    </View>
+  );
+};
+
+/** หน้า 04 — ซักประวัติ / ตรวจรักษา · จัดตาม Figma node 40:52173 */
 export const EncounterScreen: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions, derived } = useApp();
   const { width } = useWindowDimensions();
-  const wide = width >= 1140;
+  const wide = width >= 1180;
   const cur = derived.current;
 
   const bp = vitalOf(cur?.vitals ?? [], 'BP').split('/');
@@ -42,7 +171,6 @@ export const EncounterScreen: React.FC = () => {
   const [pe, setPe] = useState(cur?.pe ?? '');
   const [plan, setPlan] = useState('');
 
-  // เปลี่ยนคนไข้ → โหลดค่าจาก record ใหม่
   useEffect(() => {
     const v = cur?.vitals ?? [];
     const b = vitalOf(v, 'BP').split('/');
@@ -70,6 +198,9 @@ export const EncounterScreen: React.FC = () => {
   }, [weight, height]);
 
   const bpHigh = parseFloat(sys) >= 140 || parseFloat(dia) >= 90;
+  const tempHigh = parseFloat(temp) >= 37.5;
+  const spo2Low = parseFloat(spo2) > 0 && parseFloat(spo2) < 95;
+  const dtxHigh = parseFloat(dtx) >= 126;
 
   if (!cur) {
     return (
@@ -85,187 +216,269 @@ export const EncounterScreen: React.FC = () => {
     );
   }
 
-  const sideColumn = (
-    <View style={{ gap: 12, width: wide ? 300 : undefined }}>
-      <SectionCard title="ประวัติการมารับบริการ" bodyPadding={12} rounded="lg">
-        <View style={{ gap: 8 }}>
-          <AppText size="xs" muted>
-            โหมดออฟไลน์ — ประวัติจากเครื่องอื่นจะดึงจาก Cloud เมื่อออนไลน์
-          </AppText>
-          <Button label="เปิดประวัติเดิมในเครื่อง" variant="outline" size="sm" onPress={() => actions.setHistoryOpen(true)} />
-        </View>
-      </SectionCard>
-      <SectionCard title="ยาที่ใช้อยู่" bodyPadding={12} rounded="lg">
-        <View style={{ gap: 5 }}>
-          {cur.drugs.length ? (
-            cur.drugs.map((d) => (
-              <AppText key={d} size="sm">
-                • {d}
-              </AppText>
-            ))
-          ) : (
-            <AppText size="sm" muted>
-              ไม่มีรายการยาเดิมในเครื่อง · ดึงจาก Cloud เมื่อออนไลน์
-            </AppText>
-          )}
-        </View>
-      </SectionCard>
-      <Card rounded="lg" padded={12} shadow="none" style={{ backgroundColor: t.tones.warning.bg, borderColor: t.tones.warning.border }}>
-        <AppText size="sm" color={t.tones.warning.fg}>
-          ⚠ ยังไม่บันทึกผลคัดกรอง 2Q/9Q ของปีนี้ — เปิดแท็บ “คัดกรอง NCD” เพื่อบันทึก
-        </AppText>
-      </Card>
-    </View>
-  );
-
   return (
     <View style={{ flex: 1 }}>
-      {/* หัวคนไข้ */}
-      <View style={{ backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.border }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10, flexWrap: 'wrap' }}>
-          <AppText size="lg" weight="700">
-            {cur.name}
-          </AppText>
-          <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, backgroundColor: c.muted }}>
-            <AppText size="xs" weight="600" mono>
-              HN {cur.hn}
-            </AppText>
-          </View>
-          <AppText size="sm" muted>
-            {cur.sex} · {cur.age} ปี · เกิด {cur.dob}
-          </AppText>
-          <AppText size="sm">
-            สิทธิ์ <AppText size="sm" weight="600">{cur.right}</AppText>
-          </AppText>
-          <AppText size="sm" muted numberOfLines={1} style={{ flexShrink: 1 }}>
-            {cur.address}
-          </AppText>
-          <View style={{ flex: 1 }} />
-          <Button label="ประวัติเดิม" variant="outline" size="sm" onPress={() => actions.setHistoryOpen(true)} />
-        </View>
-        {cur.allergy ? (
-          <AlertBand
-            variant="danger"
-            title={`แพ้ยา ${cur.allergy}`}
-            detail="ข้อมูลจากบัตรประชาชน/Cloud — ยืนยันกับผู้ป่วยซ้ำก่อนสั่งยา"
-          />
-        ) : (
-          <AlertBand variant="caution" title="ยังไม่มีประวัติแพ้ยาในเครื่องนี้" detail="สอบถามและบันทึกซ้ำทุกครั้งที่รับบริการ" />
-        )}
-      </View>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 12, paddingBottom: 106, gap: 16 }}>
+        <View style={wide ? { flexDirection: 'row', gap: 16, alignItems: 'flex-start' } : { gap: 16 }}>
+          {/* คอลัมน์ซ้าย 375 — ตัวตนผู้ป่วยและข้อมูลที่ต้องเห็นตลอด */}
+          <View style={{ width: wide ? 375 : undefined, gap: 16 }}>
+            <Card rounded="xl" padded={16} shadow="md" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Button
+                  label="ประวัติเดิม"
+                  variant="outline"
+                  size="sm"
+                  onPress={() => actions.setHistoryOpen(true)}
+                  style={{ paddingHorizontal: 14 }}
+                />
+                <View style={{ flex: 1 }} />
+                <IconBtn name="expand-outline" size={32} onPress={() => actions.openOpd(state.curIdx ?? 0)} />
+                <IconBtn name="create-outline" size={32} onPress={actions.openReg} />
+              </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <View style={wide ? { flexDirection: 'row', gap: 12, alignItems: 'flex-start' } : { gap: 12 }}>
-          <View style={{ flex: 1, gap: 12 }}>
-            {/* สัญญาณชีพ */}
-            <SectionCard title="สัญญาณชีพ" caption={`ผู้บันทึก ${state.userName}`}>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-                <View style={{ minWidth: 210, flex: 1.4, gap: 6 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                    <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: c.destructive }} />
-                    <AppText size="sm" weight="600">
-                      ความดันโลหิต (mmHg)
-                    </AppText>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <TextField value={sys} onChangeText={setSys} placeholder="—" mono alignRight keyboardType="numeric" containerStyle={{ flex: 1 }} />
-                    <AppText size="lg" muted>
-                      /
-                    </AppText>
-                    <TextField value={dia} onChangeText={setDia} placeholder="—" mono alignRight keyboardType="numeric" containerStyle={{ flex: 1 }} />
-                  </View>
-                  <AppText size="xs" color={bpHigh ? c.destructive : c.mutedForeground}>
-                    {bpHigh ? '⚠ เกินเกณฑ์เตือนความดันสูง ≥ 140/90' : 'เกณฑ์เตือนอัตโนมัติ ≥ 140/90'}
+              <View style={{ alignItems: 'center', gap: 12, marginTop: 16 }}>
+                <Avatar label={initials(cur.name)} size={80} />
+                <AppText size="xl" weight="700" center>
+                  {cur.name}
+                </AppText>
+                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <MintChip label={`HN ${cur.hn}`} mono />
+                  <MintChip label={cur.right} />
+                  <MintChip label={cur.service} />
+                </View>
+              </View>
+
+              <View style={{ height: 1, backgroundColor: c.border, marginVertical: 16 }} />
+
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText size="xs" muted>
+                    เลขบัตรประชาชน
+                  </AppText>
+                  <AppText size="sm" weight="600" mono numberOfLines={1}>
+                    {cur.cid}
                   </AppText>
                 </View>
-                <TextField label="ชีพจร (/นาที)" value={pulse} onChangeText={setPulse} placeholder="—" mono alignRight keyboardType="numeric" containerStyle={{ minWidth: 120, flex: 1 }} />
-                <TextField label="หายใจ (/นาที)" value={resp} onChangeText={setResp} placeholder="—" mono alignRight keyboardType="numeric" containerStyle={{ minWidth: 120, flex: 1 }} />
-                <TextField label="อุณหภูมิ (°C)" value={temp} onChangeText={setTemp} placeholder="—" mono alignRight keyboardType="numeric" containerStyle={{ minWidth: 120, flex: 1 }} />
-                <TextField label="SpO₂ (%)" value={spo2} onChangeText={setSpo2} placeholder="—" mono alignRight keyboardType="numeric" containerStyle={{ minWidth: 110, flex: 1 }} />
-              </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
-                <TextField label="น้ำหนัก (กก.)" value={weight} onChangeText={setWeight} placeholder="—" mono alignRight keyboardType="numeric" containerStyle={{ minWidth: 120, flex: 1 }} />
-                <TextField label="ส่วนสูง (ซม.)" value={height} onChangeText={setHeight} placeholder="—" mono alignRight keyboardType="numeric" containerStyle={{ minWidth: 120, flex: 1 }} />
-                <TextField label="BMI (คำนวณ)" value={bmi} readonly placeholder="—" mono alignRight containerStyle={{ minWidth: 120, flex: 1 }} />
-                <TextField label="รอบเอว (ซม.)" value={waist} onChangeText={setWaist} placeholder="—" mono alignRight keyboardType="numeric" containerStyle={{ minWidth: 120, flex: 1 }} />
-                <TextField label="DTX (mg/dL)" value={dtx} onChangeText={setDtx} placeholder="—" mono alignRight keyboardType="numeric" containerStyle={{ minWidth: 120, flex: 1 }} />
-              </View>
-            </SectionCard>
-
-            {/* ซักประวัติ */}
-            <SectionCard title="ซักประวัติ">
-              <View style={{ gap: 10 }}>
-                <TextField label="อาการสำคัญ (CC)" required value={cc} onChangeText={setCc} placeholder="พิมพ์อาการสำคัญ" />
-                <TextField label="ประวัติปัจจุบัน (HPI)" value={hpi} onChangeText={setHpi} placeholder="พิมพ์ประวัติปัจจุบัน" multiline />
-                <View style={{ flexDirection: wide ? 'row' : 'column', gap: 10 }}>
-                  <TextField label="ตรวจร่างกาย (PE)" value={pe} onChangeText={setPe} placeholder="ผลการตรวจร่างกาย" multiline containerStyle={{ flex: 1 }} />
-                  <TextField label="แผนการรักษา / คำแนะนำ" value={plan} onChangeText={setPlan} placeholder="แผนการรักษาและคำแนะนำ" multiline containerStyle={{ flex: 1 }} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText size="xs" muted>
+                    เบอร์โทรศัพท์
+                  </AppText>
+                  <AppText size="sm" weight="600" mono numberOfLines={1}>
+                    {cur.phone || '—'}
+                  </AppText>
                 </View>
               </View>
-            </SectionCard>
 
-            {/* วินิจฉัย */}
-            <SectionCard
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+                <MiniTile label="เพศ" value={cur.sex} />
+                <MiniTile label="อายุ" value={`${cur.age} ปี`} />
+                <MiniTile label="หมู่เลือด" value={cur.bloodType} />
+              </View>
+            </Card>
+
+            <BarCard title="แพ้ยา" danger={!!cur.allergy}>
+              <AppText size="sm" weight="600" color={cur.allergy ? c.alertBandForeground : c.mutedForeground}>
+                {cur.allergy || 'ไม่พบประวัติแพ้ยา — สอบถามซ้ำทุกครั้ง'}
+              </AppText>
+            </BarCard>
+
+            <BarCard title="โรคประจำตัว">
+              <AppText size="sm" weight="600">
+                {cur.chronic && cur.chronic !== '—' ? cur.chronic : 'ไม่มีโรคประจำตัวในระบบ'}
+              </AppText>
+            </BarCard>
+
+            <BarCard title="ยาที่ใช้อยู่">
+              {cur.drugs.length ? (
+                <View style={{ gap: 6 }}>
+                  {cur.drugs.map((d) => (
+                    <AppText key={d} size="sm" weight="600">
+                      • {d}
+                    </AppText>
+                  ))}
+                </View>
+              ) : (
+                <AppText size="sm" muted>
+                  ไม่มีรายการยาเดิมในเครื่อง · ดึงจาก Cloud เมื่อออนไลน์
+                </AppText>
+              )}
+            </BarCard>
+          </View>
+
+          {/* คอลัมน์ขวา — ฟอร์มบันทึกการตรวจ */}
+          <View style={{ flex: 1, gap: 16 }}>
+            <InfoCard title="สัญญาณชีพ" icon="clipboard-pulse-outline" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                <VitalField label="ความดันโลหิต" unit="mmHg" value="" bad={bpHigh} flex={1.9} minWidth={196}>
+                  <TextInput
+                    value={sys}
+                    onChangeText={setSys}
+                    placeholder="—"
+                    placeholderTextColor={c.mutedForeground}
+                    keyboardType="numeric"
+                    inputMode="numeric"
+                    style={[
+                      {
+                        minWidth: 0,
+                        flex: 1,
+                        paddingVertical: 0,
+                        fontFamily: t.mono('600'),
+                        fontSize: t.fs.md,
+                        color: bpHigh ? c.destructive : c.foreground,
+                      },
+                      webFocusRing(c.ring) as TextStyle,
+                    ]}
+                  />
+                  <AppText size="md" mono color={bpHigh ? c.destructive : c.mutedForeground}>
+                    /
+                  </AppText>
+                  <TextInput
+                    value={dia}
+                    onChangeText={setDia}
+                    placeholder="—"
+                    placeholderTextColor={c.mutedForeground}
+                    keyboardType="numeric"
+                    inputMode="numeric"
+                    style={[
+                      {
+                        minWidth: 0,
+                        flex: 1,
+                        paddingVertical: 0,
+                        fontFamily: t.mono('600'),
+                        fontSize: t.fs.md,
+                        color: bpHigh ? c.destructive : c.foreground,
+                      },
+                      webFocusRing(c.ring) as TextStyle,
+                    ]}
+                  />
+                </VitalField>
+                <VitalField label="ชีพจร" unit="นาที" value={pulse} onChangeText={setPulse} />
+                <VitalField label="หายใจ" unit="นาที" value={resp} onChangeText={setResp} />
+                <VitalField label="อุณหภูมิ" unit="°C" value={temp} onChangeText={setTemp} bad={tempHigh} />
+                <VitalField label="SpO₂" unit="%" value={spo2} onChangeText={setSpo2} bad={spo2Low} />
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                <VitalField label="น้ำหนัก" unit="กก." value={weight} onChangeText={setWeight} />
+                <VitalField label="ส่วนสูง" unit="ซม." value={height} onChangeText={setHeight} />
+                <VitalField label="BMI" unit="kg/m²" value={bmi} readonly />
+                <VitalField label="รอบเอว" unit="ซม." value={waist} onChangeText={setWaist} />
+                <VitalField label="DTX" unit="mg/dL" value={dtx} onChangeText={setDtx} bad={dtxHigh} />
+              </View>
+            </InfoCard>
+
+            <InfoCard title="ซักประวัติ / ตรวจร่างกาย" icon="clipboard-text-outline" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
+              <View style={{ gap: 12 }}>
+                <TextField label="อาการสำคัญ (CC)" required value={cc} onChangeText={setCc} placeholder="พิมพ์อาการสำคัญ" />
+                <TextField label="ประวัติปัจจุบัน (HPI)" value={hpi} onChangeText={setHpi} placeholder="พิมพ์ประวัติปัจจุบัน" />
+                <TextField label="ตรวจร่างกาย (PE)" value={pe} onChangeText={setPe} placeholder="ผลการตรวจร่างกาย" />
+              </View>
+            </InfoCard>
+
+            <InfoCard title="แผนการรักษา / คำแนะนำ" icon="clipboard-check-outline" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
+              <TextField
+                value={plan}
+                onChangeText={setPlan}
+                placeholder="สรุปแผนการรักษา คำแนะนำที่ให้ผู้ป่วย และการนัดครั้งถัดไป"
+              />
+            </InfoCard>
+
+            <InfoCard
               title="การวินิจฉัย (ICD-10)"
-              right={<Button label="+ เพิ่ม ICD-10" variant="outline" size="sm" onPress={() => {}} />}
-              bodyPadding={10}
+              icon="stethoscope"
+              style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}
+              right={
+                <Button
+                  label="เพิ่ม"
+                  variant="outline"
+                  size="sm"
+                  icon={<Ionicons name="add" size={15} color={c.primary} />}
+                  onPress={() => {}}
+                />
+              }
             >
-              <View style={{ gap: 6 }}>
-                {cur.icd.length ? (
-                  cur.icd.map(([code, name, kind]) => (
+              {cur.icd.length ? (
+                <View style={{ gap: 0 }}>
+                  {cur.icd.map(([code, name, kind], i) => (
                     <View
                       key={code}
                       style={{
                         flexDirection: 'row',
                         alignItems: 'center',
-                        gap: 10,
-                        paddingHorizontal: 10,
-                        paddingVertical: 8,
-                        borderRadius: t.radius.md,
-                        backgroundColor: c.surface2,
+                        gap: 12,
+                        paddingVertical: 12,
+                        borderTopWidth: i === 0 ? 0 : 1,
+                        borderTopColor: c.border,
                       }}
                     >
-                      <AppText size="sm" weight="700" mono color={c.primary} style={{ minWidth: 64 }}>
+                      <AppText size="sm" weight="700" mono color={c.primary} style={{ minWidth: 62 }}>
                         {code}
                       </AppText>
-                      <AppText size="sm" style={{ flex: 1 }} numberOfLines={1}>
+                      <AppText size="sm" weight="600" style={{ flex: 1 }} numberOfLines={1}>
                         {name}
                       </AppText>
                       <Badge label={kind} tone={kind === 'หลัก' ? 'primary' : 'neutral'} size="sm" />
+                      <IconBtn name="trash-outline" size={30} onPress={() => {}} />
                     </View>
-                  ))
-                ) : (
-                  <AppText size="sm" muted center style={{ paddingVertical: 12 }}>
-                    ยังไม่มีการวินิจฉัย — กด “+ เพิ่ม ICD-10” หรือพิมพ์รหัสเพื่อค้นหา
-                  </AppText>
-                )}
-              </View>
-            </SectionCard>
+                  ))}
+                </View>
+              ) : (
+                <AppText size="sm" muted center style={{ paddingVertical: 10 }}>
+                  ยังไม่มีการวินิจฉัย — กด “เพิ่ม” เพื่อค้นรหัส ICD-10
+                </AppText>
+              )}
+            </InfoCard>
           </View>
-
-          {sideColumn}
         </View>
       </ScrollView>
 
-      {/* แถบปุ่มล่าง */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 10,
-          paddingHorizontal: 16,
-          paddingVertical: 10,
-          borderTopWidth: 1,
-          borderTopColor: c.border,
-          backgroundColor: c.surface2,
-        }}
-      >
-        <AppText size="xs" muted style={{ flex: 1 }} numberOfLines={2}>
-          ● ร่างแบบบันทึกถูกเก็บในเครื่องอัตโนมัติ — ยังไม่ส่งขึ้น Cloud จนกว่าจะซิงค์
-        </AppText>
-        <Button label="ยกเลิก" variant="ghost" size="sm" onPress={() => actions.setOssTab('list')} />
-        <Button label="ส่งต่อ Lab" variant="outline" size="sm" onPress={() => {}} />
-        <Button label="บันทึกและจบการตรวจ" size="sm" onPress={actions.saveEncounter} />
+      {/* บาร์ลอยด้านล่างแบบกระจกตาม Figma 40:52173 — ลอยเหนือเนื้อหา ไม่มีเส้นคั่นกับหน้า */}
+      <View pointerEvents="box-none" style={{ position: 'absolute', left: 16, right: 16, bottom: 16 }}>
+        <View
+          style={[
+            {
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
+              minHeight: 66,
+              paddingLeft: 8,
+              paddingRight: 8,
+              paddingVertical: 9,
+              borderRadius: t.radius.pill,
+              // กระจกโปร่งตาม Figma (ขาว ~30%) — อ่านออกเพราะฉากหลังถูกเบลอ+อิ่มสี
+              backgroundColor: withAlpha(t.isDark ? c.card : '#FFFFFF', Platform.OS === 'web' ? 0.32 : 0.9),
+              // ขอบแสงบาง ๆ ของขอบกระจก (ไม่ใช่เส้นการ์ด)
+              borderWidth: 1,
+              borderColor: withAlpha(t.isDark ? '#FFFFFF' : '#FFFFFF', t.isDark ? 0.08 : 0.55),
+              ...(Platform.OS === 'web'
+                ? ({
+                    backdropFilter: 'blur(22px) saturate(1.6)',
+                    WebkitBackdropFilter: 'blur(22px) saturate(1.6)',
+                  } as unknown as ViewStyle)
+                : null),
+            },
+            t.shadow.lg,
+          ]}
+        >
+          {/* ป้ายสถานะร่าง — จุดนำหน้า + ข้อความลอยบนกระจก ไม่มีพื้นหลัง */}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              paddingHorizontal: 12,
+              flexShrink: 1,
+            }}
+          >
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c.mutedForeground }} />
+            <AppText size="xs" weight="600" muted numberOfLines={1} style={{ flexShrink: 1 }}>
+              ร่างแบบบันทึกถูกเก็บในเครื่องอัตโนมัติ — ยังไม่ส่งขึ้น Cloud จนกว่าจะซิงค์
+            </AppText>
+          </View>
+          <View style={{ flex: 1 }} />
+          {/* ปุ่มคู่ท้ายบาร์กว้างเท่ากัน 100 ตาม Figma (btn 100x47) */}
+          <Button label="ยกเลิก" variant="outline" onPress={() => actions.setOssTab('list')} style={{ width: 100 }} />
+          <Button label="บันทึก" onPress={actions.saveEncounter} style={{ width: 100 }} />
+        </View>
       </View>
     </View>
   );

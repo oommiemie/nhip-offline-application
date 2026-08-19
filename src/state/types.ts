@@ -1,3 +1,5 @@
+import type { AlertKind } from '../components/AlertDialog';
+
 export type View = 'login' | 'setup' | 'app';
 export type ScreenId = 'dashboard' | 'oss' | 'sync' | 'settings';
 
@@ -114,6 +116,21 @@ export interface RegisterPayload {
   phone: string;
 }
 
+/** คำสั่งเปิดกล่องแจ้งสถานะ (ข้อกำหนด 4.8) — เก็บใน state ให้ทุกหน้าสั่งเปิดได้ */
+export interface AlertRequest {
+  kind: AlertKind;
+  title?: string;
+  message?: string;
+  /** บรรทัดอ้างอิง เช่น HN / รหัสข้อผิดพลาด */
+  detail?: string;
+  confirmLabel?: string;
+  /** ใส่ = กล่องยืนยัน 2 ปุ่ม · ไม่ใส่ = กล่องแจ้งผลปุ่มเดียว (ปิดเองเมื่อวงแหวนเดินครบ) */
+  cancelLabel?: string;
+  /** override เวลานับถอยหลังก่อนปิดเอง (ms) · null = ไม่ปิดเอง */
+  autoCloseMs?: number | null;
+  onConfirm?: () => void;
+}
+
 export type NoticeTone = 'success' | 'warning' | 'destructive' | 'info';
 
 /** แจ้งเตือนในแอป (กระดิ่งมุมขวาบน) */
@@ -162,4 +179,6 @@ export interface AppState {
   opdIdx: number | null;
   historyOpen: boolean;
   notices: AppNotice[];
+  /** กล่องแจ้งสถานะที่กำลังเปิดอยู่ (null = ไม่มี) */
+  alert: AlertRequest | null;
 }

@@ -217,7 +217,18 @@ export const NoticeBell: React.FC = () => {
 
               {state.notices.length ? (
                 <Pressable
-                  onPress={actions.clearNotices}
+                  // ลบทั้งชุดย้อนกลับไม่ได้ — ถามยืนยันด้วยกล่องแจ้งสถานะก่อน (ข้อกำหนด 4.8)
+                  onPress={() =>
+                    actions.showAlert({
+                      kind: 'delete',
+                      title: 'ล้างการแจ้งเตือนทั้งหมด?',
+                      message: 'รายการแจ้งเตือนทั้งหมดจะถูกลบออกจากเครื่อง และเรียกคืนไม่ได้',
+                      detail: `${state.notices.length} รายการ`,
+                      cancelLabel: 'ยกเลิก',
+                      confirmLabel: 'ลบทั้งหมด',
+                      onConfirm: actions.clearNotices,
+                    })
+                  }
                   style={{ height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: c.surface2 }}
                 >
                   <AppText size="xs" weight="600" muted>

@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { nowHM } from '../utils/format';
 import { BRANCHES, CARDS, FACILITIES, IMPORT_TABLES, QUEUE_SEED, SYNC_FAILS, tablesForFacility } from './mockData';
 import type {
+  AlertRequest,
   AppNotice,
   AppState,
   Facility,
@@ -128,6 +129,7 @@ const initialState = (): AppState => ({
   opdIdx: null,
   historyOpen: false,
   notices: seedNotices(),
+  alert: null,
 });
 
 export interface AppActions {
@@ -160,6 +162,9 @@ export interface AppActions {
   openOpd: (idx: number) => void;
   closeOpd: () => void;
   setHistoryOpen: (open: boolean) => void;
+  /** เปิดกล่องแจ้งสถานะ (ข้อกำหนด 4.8) */
+  showAlert: (req: AlertRequest) => void;
+  closeAlert: () => void;
   markNoticeRead: (id: string) => void;
   markAllNoticesRead: () => void;
   clearNotices: () => void;
@@ -258,7 +263,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   screen: 'sync',
                 },
           );
-          return { ...s, syncing: false, syncPct: 100, syncLog: log, lastSync: nowHM(), notices };
+          return {
+            ...s,
+            syncing: false,
+            syncPct: 100,
+            syncLog: log,
+            lastSync: nowHM(),
+            notices,
+            // สรุปผลรอบซิงค์เป็นกล่องแจ้งสถานะ — ไม่ผ่าน = พบปัญหา (ต้องแก้) · ผ่านหมด = แจ้งผลเฉย ๆ
+            alert: fail
+              ? {
+                  kind: 'issue',
+                  title: `ซิงค์เสร็จ · พบปัญหา ${fail} รายการ`,
+                  message: 'แก้ไขรายการที่ไม่ผ่านเงื่อนไขในตาราง แล้วกดอัปโหลดซ้ำได้ทันที',
+                  detail: `อัปโหลดผ่าน ${pass} รายการ · ไม่ผ่าน ${fail} รายการ`,
+                  confirmLabel: 'ดูรายการ',
+                }
+              : {
+                  kind: 'add',
+                  title: 'ซิงค์ขึ้น Cloud สำเร็จ',
+                  message: 'ข้อมูลผู้ป่วยทั้งหมดขึ้นทะเบียนบน Cloud แล้ว และถูกลบออกจากคิวเครื่อง',
+                  detail: `อัปโหลดผ่าน ${pass} รายการ`,
+                },
+          };
         }
         const r = records[i];
         log.push(line(`$ POST /api/v2/visit  HN ${r.hn}  (${r.service})`));
@@ -436,6 +463,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           detail: `${rec.name} · คิว ${rec.queueNo} · ${rec.service}`,
           screen: 'dashboard',
         }),
+        alert: {
+          kind: 'add',
+          title: 'ลงทะเบียนคนไข้ใหม่สำเร็จ',
+          message: `เพิ่ม ${rec.name} เข้าคิวรับบริการแล้ว`,
+          detail: `HN ${rec.hn} · คิว ${rec.queueNo} · ${rec.service}`,
+        },
       };
     });
   }, []);
@@ -512,7 +545,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       resubmit: (idx, newValue) =>
         setState((s) => {
           // อัปโหลดซ้ำก็คือการส่งข้อมูลขึ้น Cloud — ต้องยืนยันตัวตน MOPH SSO ก่อนเหมือนปุ่มเริ่มซิงค์
-          if (s.sso !== 'in') return { ...s, editingIdx: null, ssoModalOpen: true };
+          if (s.sso !== 'in')
+            return {
+              ...s,
+              editingIdx: null,
+              alert: {
+                kind: 'warning',
+                title: 'ต้องยืนยันตัวตนก่อนอัปโหลด',
+                message: 'การส่งข้อมูลขึ้น Cloud ต้องระบุผู้ทำรายการ — เข้าสู่ระบบ MOPH SSO ก่อนแล้วลองใหม่',
+                confirmLabel: 'เข้าสู่ระบบ SSO',
+                cancelLabel: 'ยกเลิก',
+                onConfirm: () => setState((p) => ({ ...p, ssoModalOpen: true })),
+              },
+            };
+          // กันบันทึกค่าว่าง — ฟิลด์ที่ซิงค์ไม่ผ่านต้องมีค่าที่แก้แล้วเสมอ
+          if (!newValue.trim())
+            return {
+              ...s,
+              alert: {
+                kind: 'error',
+                title: 'บันทึกไม่สำเร็จ',
+                message: `ต้องระบุ${s.records[idx]?.errorField ?? 'ข้อมูลที่แก้ไข'}ก่อนอัปโหลดซ้ำ`,
+                detail: `HN ${s.records[idx]?.hn ?? ''}`,
+              },
+            };
           const records = s.records.map((r, i) =>
             i === idx ? { ...r, sync: 'pass' as const, error: '', errorField: '', errorValue: newValue } : r
           );
@@ -533,11 +589,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               line(`$ PUT /api/v2/visit  HN ${r?.hn ?? ''}  (แก้ไข ${r?.errorField ?? ''})`),
               line('↳ [Success] 200 OK · อัปโหลดขึ้น Cloud เรียบร้อย', 'ok'),
             ],
+            alert: {
+              kind: 'edit',
+              title: 'แก้ไขและอัปโหลดซ้ำสำเร็จ',
+              message: `${r?.errorField ?? 'ข้อมูล'}ถูกแก้ไขและส่งขึ้น Cloud เรียบร้อยแล้ว`,
+              detail: `HN ${r?.hn ?? ''} · ${newValue}`,
+            },
           };
         }),
       openOpd: (idx) => setState((s) => ({ ...s, opdIdx: idx })),
       closeOpd: () => setState((s) => ({ ...s, opdIdx: null })),
       setHistoryOpen: (historyOpen) => setState((s) => ({ ...s, historyOpen })),
+      showAlert: (alert) => setState((s) => ({ ...s, alert })),
+      closeAlert: () => setState((s) => ({ ...s, alert: null })),
       markNoticeRead: (id) =>
         setState((s) => ({ ...s, notices: s.notices.map((n) => (n.id === id ? { ...n, read: true } : n)) })),
       markAllNoticesRead: () => setState((s) => ({ ...s, notices: s.notices.map((n) => ({ ...n, read: true })) })),

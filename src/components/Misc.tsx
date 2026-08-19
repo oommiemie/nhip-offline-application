@@ -1,9 +1,10 @@
 import React from 'react';
-import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { AnimatedPressable, usePressScale, webFocusRing } from './usePressScale';
 
 /** วงกลมอักษรย่อ (เจ้าหน้าที่/ผู้ใช้) */
 export const Avatar: React.FC<{ label: string; size?: number; bg?: string; fg?: string }> = ({
@@ -39,8 +40,10 @@ export const IconBtn: React.FC<{
   style?: StyleProp<ViewStyle>;
 }> = ({ name, onPress, size = 40, style }) => {
   const t = useTheme();
+  const press = usePressScale(0.92);
   return (
-    <Pressable
+    <AnimatedPressable
+      {...press.handlers}
       onPress={onPress}
       style={[
         {
@@ -51,11 +54,13 @@ export const IconBtn: React.FC<{
           alignItems: 'center',
           justifyContent: 'center',
         },
+        press.pressStyle,
+        webFocusRing(t.colors.ring),
         style,
       ]}
     >
       <Ionicons name={name} size={Math.round(size * 0.45)} color={t.colors.mutedForeground} />
-    </Pressable>
+    </AnimatedPressable>
   );
 };
 
