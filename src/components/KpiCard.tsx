@@ -42,15 +42,15 @@ export const KpiCard: React.FC<KpiCardProps> = ({ label, value, unit, caption, a
           borderRadius: t.radius.lg,
           backgroundColor: c.card,
           borderWidth: 1,
-          // hover: ขอบไล่เป็นสีสถานะของการ์ด + ยกตัวขึ้น 2px แบบนุ่ม ๆ
-          borderColor: h.mix(c.border, withAlpha(accent, 0.5)),
+          // ปกติไร้เส้นขอบ (แยกชั้นด้วยเงาแทน) · hover: ขอบเรืองเป็นสีสถานะ + ยกตัวขึ้น 2px
+          borderColor: h.mix(withAlpha(accent, 0), withAlpha(accent, 0.5)),
           padding: 16,
           gap: 8,
           // ครอปภาพ 3D ที่ยื่นพ้นมุมล่างขวา ให้ดูเหมือนโผล่ขึ้นมาจากขอบการ์ด
           overflow: 'hidden',
           transform: [{ translateY: h.num(0, -2) }],
         },
-        h.hover ? t.shadow.md : null,
+        h.hover ? t.shadow.md : t.shadow.sm,
         style,
       ]}
     >

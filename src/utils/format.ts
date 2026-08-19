@@ -51,6 +51,15 @@ export const formatPhone = (input: string): string => {
 /** จำนวนหลักของเบอร์โทร (ใช้ตรวจความครบถ้วน — เบอร์บ้าน 9 หลัก มือถือ 10 หลัก) */
 export const phoneDigits = (input: string): number => input.replace(/\D/g, '').length;
 
+/** จัดรูปเลขบัตรประชาชน 13 หลักเป็น 1-2345-67890-12-3 ระหว่างพิมพ์ */
+export const formatCid = (input: string): string => {
+  const d = input.replace(/\D/g, '').slice(0, 13);
+  return [d.slice(0, 1), d.slice(1, 5), d.slice(5, 10), d.slice(10, 12), d.slice(12, 13)].filter(Boolean).join('-');
+};
+
+/** จำนวนหลักของเลขบัตรประชาชน (ครบ = 13) */
+export const cidDigits = (input: string): number => input.replace(/\D/g, '').length;
+
 /** คำนำหน้าที่ตัดออกก่อนทำอักษรย่อในวงกลม */
 const NAME_TITLES = ['นางสาว', 'เด็กชาย', 'เด็กหญิง', 'ด.ช.', 'ด.ญ.', 'น.ส.', 'นาง', 'นาย', 'พระ'];
 

@@ -85,7 +85,7 @@ export const SettingsScreen: React.FC = () => {
       </View>
 
       {/* ธีมสี */}
-      <SectionCard
+      <SectionCard shadow="md" style={{ borderWidth: 0 }}
         title="ธีมสี"
         right={
           <SegmentedPills
@@ -159,7 +159,7 @@ export const SettingsScreen: React.FC = () => {
       </SectionCard>
 
       {/* ตัวอักษร */}
-      <SectionCard title="ตัวอักษร">
+      <SectionCard shadow="md" style={{ borderWidth: 0 }} title="ตัวอักษร">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           {FONT_LIST.map((f) => (
             <OptionTile key={f.id} active={settings.fontId === f.id} onPress={() => setFontId(f.id)} style={{ width: tileW }}>
@@ -208,7 +208,7 @@ export const SettingsScreen: React.FC = () => {
       </SectionCard>
 
       {/* ความหนาแน่นตาราง */}
-      <SectionCard title="ความหนาแน่นของตาราง">
+      <SectionCard shadow="md" style={{ borderWidth: 0 }} title="ความหนาแน่นของตาราง">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           {(
             [
@@ -245,7 +245,7 @@ export const SettingsScreen: React.FC = () => {
       </SectionCard>
 
       {/* รูปแบบ panel */}
-      <SectionCard
+      <SectionCard shadow="md" style={{ borderWidth: 0 }}
         title="รูปแบบ panel ของงานรอง"
         caption="ประวัติเดิม / อ่านอิงข้อมูล — เลือกได้ว่าจะเปิดแบบ drawer ขวาหรือ modal กลางจอ"
         right={<Button label="ดูตัวอย่าง" variant="outline" size="sm" onPress={() => actions.setHistoryOpen(true)} />}
@@ -286,7 +286,7 @@ export const SettingsScreen: React.FC = () => {
       </SectionCard>
 
       {/* การเคลื่อนไหว */}
-      <SectionCard title="การเคลื่อนไหว">
+      <SectionCard shadow="md" style={{ borderWidth: 0 }} title="การเคลื่อนไหว">
         <View style={{ gap: 10 }}>
           <Checkbox
             checked={settings.reduceMotion}
@@ -300,7 +300,7 @@ export const SettingsScreen: React.FC = () => {
       </SectionCard>
 
       {/* กล่องแจ้งสถานะ — ที่รวมตัวอย่างครบทั้ง 6 ชนิดสำหรับตรวจรับงาน (ข้อกำหนด 4.8) */}
-      <SectionCard title="กล่องแจ้งสถานะ (Alert Dialog)" caption="กดเพื่อดูตัวอย่างแต่ละสถานะ">
+      <SectionCard shadow="md" style={{ borderWidth: 0 }} title="กล่องแจ้งสถานะ (Alert Dialog)" caption="กดเพื่อดูตัวอย่างแต่ละสถานะ">
         <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
           {ALERT_SAMPLES.map(([label, req]) => (
             <Button key={label} label={label} variant="outline" size="sm" onPress={() => actions.showAlert(req)} />

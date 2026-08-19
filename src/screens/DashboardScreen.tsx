@@ -35,7 +35,7 @@ const ShiftSummary: React.FC = () => {
     { label: 'ไม่ผ่าน · ต้องแก้ไข', value: `${derived.failCount} ราย`, color: '#FF3B30' },
   ];
   return (
-    <View style={{ borderRadius: t.radius.xl, backgroundColor: t.colors.terminalBg, padding: 16, gap: 16 }}>
+    <View style={[{ borderRadius: t.radius.xl, backgroundColor: t.colors.terminalBg, padding: 16, gap: 16 }, t.shadow.md]}>
       <AppText size="md" weight="700" color="#FFFFFF">
         สรุปงานกะปัจจุบัน
       </AppText>
@@ -60,7 +60,7 @@ const RoomStatus: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   return (
-    <View style={{ borderRadius: t.radius.xl, backgroundColor: c.card, padding: 16, gap: 4 }}>
+    <View style={[{ borderRadius: t.radius.xl, backgroundColor: c.card, padding: 16, gap: 4 }, t.shadow.md]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <AppText size="md" weight="700" style={{ flex: 1 }}>
           สถานะห้องปฏิบัติงาน
@@ -251,12 +251,15 @@ export const DashboardScreen: React.FC = () => {
   /* การ์ดคิว: หัวข้อ + ปุ่มลงทะเบียน · ตาราง · แถบแบ่งหน้า (Figma Frame 32) */
   const queueCard = (
     <View
-      style={{
-        flex: wide ? 1 : undefined,
-        borderRadius: t.radius.xl,
-        backgroundColor: c.card,
-        overflow: 'hidden',
-      }}
+      style={[
+        {
+          flex: wide ? 1 : undefined,
+          borderRadius: t.radius.xl,
+          backgroundColor: c.card,
+          overflow: 'hidden',
+        },
+        t.shadow.md,
+      ]}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}>
         <AppText size="md" weight="700" style={{ flex: 1 }}>

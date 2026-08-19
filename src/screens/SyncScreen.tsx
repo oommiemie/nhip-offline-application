@@ -136,8 +136,6 @@ export const SyncScreen: React.FC = () => {
           {
             borderRadius: t.radius.xl,
             backgroundColor: c.card,
-            borderWidth: 1,
-            borderColor: c.border,
             padding: 16,
             gap: 24,
             overflow: 'hidden',
@@ -292,11 +290,16 @@ export const SyncScreen: React.FC = () => {
         {/* หัวตาราง: Figma มีแค่ชื่อ 16/700 กลางแถวสูง 78 ไม่มีคำอธิบายรอง ไม่มีเส้นคั่น (แถบหัวตารางคั่นเอง) */}
         <SectionCard
           title="รายการข้อมูลผู้ป่วยรอ Sync ขึ้น Cloud"
-          titleSize="lg"
           divider={false}
-          headerPaddingV={27}
+          headerPaddingV={16}
           bodyPadding={0}
-          style={wide ? { flex: 1 } : undefined}
+          shadow="md"
+          style={[{ borderWidth: 0 }, wide ? { flex: 1 } : null]}
+          right={
+            <AppText size="sm" muted mono>
+              {state.records.length} ราย
+            </AppText>
+          }
         >
           <DataTable
             columns={columns}
@@ -331,8 +334,10 @@ export const SyncScreen: React.FC = () => {
         <View style={[{ gap: 0 }, wide ? { width: 330 } : null]}>
           <SectionCard
             title="Log การซิงค์"
-            titleSize="lg"
             divider={false}
+            headerPaddingV={16}
+            shadow="md"
+            style={{ borderWidth: 0 }}
             right={
               <AppText size="sm" weight="700" color={c.primary} mono>
                 {state.syncPct}% ({derived.passCount}/{state.records.length || 0} สำเร็จ)

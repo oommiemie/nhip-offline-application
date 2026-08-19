@@ -131,6 +131,18 @@ export interface AlertRequest {
   onConfirm?: () => void;
 }
 
+/** ข้อมูลที่แก้ได้จาก modal แก้ไขผู้ป่วย — เปิดแก้ทุกช่องรวมข้อมูลตัวตน */
+export interface PatientEditPayload extends RegisterPayload {
+  cid: string;
+  name: string;
+  sex: 'ชาย' | 'หญิง';
+  dob: string;
+  race: string;
+  nationality: string;
+  religion: string;
+  address: string;
+}
+
 export type NoticeTone = 'success' | 'warning' | 'destructive' | 'info';
 
 /** แจ้งเตือนในแอป (กระดิ่งมุมขวาบน) */

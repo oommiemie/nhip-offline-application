@@ -4,7 +4,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
-import { AnimatedPressable, usePressScale, webFocusRing } from './usePressScale';
+import { AnimatedPressable, useHoverFade, usePressScale, webFocusRing } from './usePressScale';
 
 /** วงกลมอักษรย่อ (เจ้าหน้าที่/ผู้ใช้) */
 export const Avatar: React.FC<{ label: string; size?: number; bg?: string; fg?: string }> = ({
@@ -41,16 +41,20 @@ export const IconBtn: React.FC<{
 }> = ({ name, onPress, size = 40, style }) => {
   const t = useTheme();
   const press = usePressScale(0.92);
+  // hover: พื้นไล่จากเทา → เขียวอ่อน และไอคอนเปลี่ยนเป็นเขียวเข้ม
+  const h = useHoverFade();
   return (
     <AnimatedPressable
       {...press.handlers}
+      onPointerEnter={h.handlers.onPointerEnter}
+      onPointerLeave={h.handlers.onPointerLeave}
       onPress={onPress}
       style={[
         {
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: t.colors.muted,
+          backgroundColor: h.mix(t.colors.muted, t.tones.primary.bg),
           alignItems: 'center',
           justifyContent: 'center',
         },
@@ -59,7 +63,11 @@ export const IconBtn: React.FC<{
         style,
       ]}
     >
-      <Ionicons name={name} size={Math.round(size * 0.45)} color={t.colors.mutedForeground} />
+      <Ionicons
+        name={name}
+        size={Math.round(size * 0.45)}
+        color={h.hover ? t.tones.primary.fg : t.colors.mutedForeground}
+      />
     </AnimatedPressable>
   );
 };

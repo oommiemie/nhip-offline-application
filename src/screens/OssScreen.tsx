@@ -90,7 +90,12 @@ const TabPill: React.FC<{
         </>
       ) : null}
       <MaterialCommunityIcons name={icon} size={18} color={active ? c.primaryForeground : c.primaryStrong} />
-      <AppText size="sm" weight={active ? '700' : '600'} color={active ? c.primaryForeground : c.primaryStrong}>
+      <AppText
+        size="sm"
+        weight={active ? '700' : '600'}
+        color={active ? c.primaryForeground : c.primaryStrong}
+        style={{ userSelect: 'none' } as never}
+      >
         {label}
       </AppText>
       {count ? (

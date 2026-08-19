@@ -12,11 +12,17 @@ import {
   IconBtn,
   InfoCard,
   TextField,
-  webFocusRing,
+  Tooltip,
 } from '../components';
+import { AddIcdModal } from '../modals/AddIcdModal';
+import { EditPatientModal } from '../modals/EditPatientModal';
 import { useApp } from '../state/AppContext';
 import { useTheme, withAlpha } from '../theme';
 import { initials } from '../utils/format';
+
+/** ช่องในกล่องค่าตรวจไม่วาด outline ของตัวเอง — สถานะโฟกัสแสดงที่ขอบกล่องนอกแทน */
+const NO_INNER_OUTLINE =
+  Platform.OS === 'web' ? ({ outlineStyle: 'none', outlineWidth: 0 } as unknown as TextStyle) : null;
 
 const vitalOf = (vitals: Array<[string, string]>, key: string): string =>
   vitals.find(([k]) => k === key)?.[1] ?? '';
@@ -94,10 +100,14 @@ const VitalField: React.FC<{
   bad?: boolean;
   flex?: number;
   minWidth?: number;
+  /** บังคับสถานะโฟกัสจากภายนอก (กล่องความดันมี 2 ช่องใน) */
+  focused?: boolean;
   children?: React.ReactNode;
-}> = ({ label, unit, value, onChangeText, readonly = false, bad = false, flex = 1, minWidth = 118, children }) => {
+}> = ({ label, unit, value, onChangeText, readonly = false, bad = false, flex = 1, minWidth = 118, focused = false, children }) => {
   const t = useTheme();
   const c = t.colors;
+  const [innerFocus, setInnerFocus] = useState(false);
+  const hasFocus = focused || innerFocus;
   return (
     <View style={{ flex, minWidth, gap: 7 }}>
       <AppText size="sm" weight="600" numberOfLines={1}>
@@ -112,8 +122,9 @@ const VitalField: React.FC<{
           paddingHorizontal: 12,
           borderRadius: t.radius.md,
           backgroundColor: c.inputBg,
+          // โฟกัส = ขอบนอกเขียวทั้งกล่อง แบบเดียวกับ TextField ช่องอื่น ๆ
           borderWidth: 1.5,
-          borderColor: bad ? withAlpha(c.destructive, 0.5) : 'transparent',
+          borderColor: bad ? withAlpha(c.destructive, 0.5) : hasFocus ? c.ring : 'transparent',
         }}
       >
         {children ?? (
@@ -125,6 +136,8 @@ const VitalField: React.FC<{
             placeholderTextColor={c.mutedForeground}
             keyboardType="numeric"
             inputMode="numeric"
+            onFocus={() => setInnerFocus(true)}
+            onBlur={() => setInnerFocus(false)}
             style={[
               {
                 flex: 1,
@@ -134,7 +147,7 @@ const VitalField: React.FC<{
                 fontSize: t.fs.md,
                 color: bad ? c.destructive : readonly ? c.mutedForeground : c.foreground,
               },
-              webFocusRing(c.ring) as TextStyle,
+              NO_INNER_OUTLINE,
             ]}
           />
         )}
@@ -170,6 +183,12 @@ export const EncounterScreen: React.FC = () => {
   const [hpi, setHpi] = useState(cur?.hpi ?? '');
   const [pe, setPe] = useState(cur?.pe ?? '');
   const [plan, setPlan] = useState('');
+  /** ขยายการ์ดผู้ป่วยดูสัญชาติ/เชื้อชาติ/ศาสนา/ที่อยู่ (Figma 126:462) */
+  const [expanded, setExpanded] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  /** โฟกัสของช่องคู่ความดัน — ใช้จุดเดียวให้ขอบกล่องนอกติดพร้อมกัน */
+  const [bpFocus, setBpFocus] = useState(false);
+  const [icdOpen, setIcdOpen] = useState(false);
 
   useEffect(() => {
     const v = cur?.vitals ?? [];
@@ -232,8 +251,16 @@ export const EncounterScreen: React.FC = () => {
                   style={{ paddingHorizontal: 14 }}
                 />
                 <View style={{ flex: 1 }} />
-                <IconBtn name="expand-outline" size={32} onPress={() => actions.openOpd(state.curIdx ?? 0)} />
-                <IconBtn name="create-outline" size={32} onPress={actions.openReg} />
+                <Tooltip label={expanded ? 'ย่อข้อมูล' : 'ดูข้อมูลเพิ่มเติม'}>
+                  <IconBtn
+                    name={expanded ? 'contract-outline' : 'expand-outline'}
+                    size={32}
+                    onPress={() => setExpanded((v) => !v)}
+                  />
+                </Tooltip>
+                <Tooltip label="แก้ไขข้อมูลผู้ป่วย">
+                  <IconBtn name="pencil" size={32} onPress={() => setEditOpen(true)} />
+                </Tooltip>
               </View>
 
               <View style={{ alignItems: 'center', gap: 12, marginTop: 16 }}>
@@ -274,6 +301,19 @@ export const EncounterScreen: React.FC = () => {
                 <MiniTile label="อายุ" value={`${cur.age} ปี`} />
                 <MiniTile label="หมู่เลือด" value={cur.bloodType} />
               </View>
+
+              {expanded ? (
+                <>
+                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                    <MiniTile label="สัญชาติ" value={cur.nationality} />
+                    <MiniTile label="เชื้อชาติ" value={cur.race} />
+                    <MiniTile label="ศาสนา" value={cur.religion} />
+                  </View>
+                  <View style={{ marginTop: 10 }}>
+                    <MiniTile label="ที่อยู่" value={cur.address} />
+                  </View>
+                </>
+              ) : null}
             </Card>
 
             <BarCard title="แพ้ยา" danger={!!cur.allergy}>
@@ -309,7 +349,7 @@ export const EncounterScreen: React.FC = () => {
           <View style={{ flex: 1, gap: 16 }}>
             <InfoCard title="สัญญาณชีพ" icon="clipboard-pulse-outline" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-                <VitalField label="ความดันโลหิต" unit="mmHg" value="" bad={bpHigh} flex={1.9} minWidth={196}>
+                <VitalField label="ความดันโลหิต (mmHg)" unit="" value="" bad={bpHigh} focused={bpFocus}>
                   <TextInput
                     value={sys}
                     onChangeText={setSys}
@@ -317,6 +357,8 @@ export const EncounterScreen: React.FC = () => {
                     placeholderTextColor={c.mutedForeground}
                     keyboardType="numeric"
                     inputMode="numeric"
+                    onFocus={() => setBpFocus(true)}
+                    onBlur={() => setBpFocus(false)}
                     style={[
                       {
                         minWidth: 0,
@@ -326,7 +368,7 @@ export const EncounterScreen: React.FC = () => {
                         fontSize: t.fs.md,
                         color: bpHigh ? c.destructive : c.foreground,
                       },
-                      webFocusRing(c.ring) as TextStyle,
+                      NO_INNER_OUTLINE,
                     ]}
                   />
                   <AppText size="md" mono color={bpHigh ? c.destructive : c.mutedForeground}>
@@ -339,6 +381,8 @@ export const EncounterScreen: React.FC = () => {
                     placeholderTextColor={c.mutedForeground}
                     keyboardType="numeric"
                     inputMode="numeric"
+                    onFocus={() => setBpFocus(true)}
+                    onBlur={() => setBpFocus(false)}
                     style={[
                       {
                         minWidth: 0,
@@ -348,7 +392,7 @@ export const EncounterScreen: React.FC = () => {
                         fontSize: t.fs.md,
                         color: bpHigh ? c.destructive : c.foreground,
                       },
-                      webFocusRing(c.ring) as TextStyle,
+                      NO_INNER_OUTLINE,
                     ]}
                   />
                 </VitalField>
@@ -392,7 +436,7 @@ export const EncounterScreen: React.FC = () => {
                   variant="outline"
                   size="sm"
                   icon={<Ionicons name="add" size={15} color={c.primary} />}
-                  onPress={() => {}}
+                  onPress={() => setIcdOpen(true)}
                 />
               }
             >
@@ -417,7 +461,25 @@ export const EncounterScreen: React.FC = () => {
                         {name}
                       </AppText>
                       <Badge label={kind} tone={kind === 'หลัก' ? 'primary' : 'neutral'} size="sm" />
-                      <IconBtn name="trash-outline" size={30} onPress={() => {}} />
+                      <Tooltip label="ลบ">
+                        <IconBtn
+                          name="trash-outline"
+                          size={30}
+                          onPress={() =>
+                            actions.showAlert({
+                              kind: 'delete',
+                              title: 'ลบการวินิจฉัยนี้?',
+                              message: name,
+                              detail: `${code} · ${kind}`,
+                              cancelLabel: 'ยกเลิก',
+                              confirmLabel: 'ลบ',
+                              onConfirm: () => {
+                                if (state.curIdx !== null) actions.removeIcd(state.curIdx, code);
+                              },
+                            })
+                          }
+                        />
+                      </Tooltip>
                     </View>
                   ))}
                 </View>
@@ -430,6 +492,16 @@ export const EncounterScreen: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+
+      <EditPatientModal visible={editOpen} record={cur} index={state.curIdx} onClose={() => setEditOpen(false)} />
+      <AddIcdModal
+        visible={icdOpen}
+        existingCodes={cur.icd.map(([code]) => code)}
+        onClose={() => setIcdOpen(false)}
+        onAdd={(code, name, kind) => {
+          if (state.curIdx !== null) actions.addIcd(state.curIdx, code, name, kind);
+        }}
+      />
 
       {/* บาร์ลอยด้านล่างแบบกระจกตาม Figma 40:52173 — ลอยเหนือเนื้อหา ไม่มีเส้นคั่นกับหน้า */}
       <View pointerEvents="box-none" style={{ position: 'absolute', left: 16, right: 16, bottom: 16 }}>

@@ -5,6 +5,7 @@ import { BRANCHES, CARDS, FACILITIES, IMPORT_TABLES, QUEUE_SEED, SYNC_FAILS, tab
 import type {
   AlertRequest,
   AppNotice,
+  PatientEditPayload,
   AppState,
   Facility,
   ImportTable,
@@ -155,6 +156,11 @@ export interface AppActions {
   readCard: () => void;
   rereadCard: () => void;
   confirmReg: (payload: RegisterPayload) => void;
+  /** แก้ไขข้อมูลผู้ป่วย — เปิดแก้ทุกช่องรวมข้อมูลตัวตน */
+  updatePatient: (idx: number, payload: PatientEditPayload) => void;
+  /** เพิ่ม/ลบการวินิจฉัย ICD-10 ของ record หนึ่งราย */
+  addIcd: (idx: number, code: string, name: string, kind: string) => void;
+  removeIcd: (idx: number, code: string) => void;
   startSync: () => void;
   openEdit: (idx: number) => void;
   closeEdit: () => void;
@@ -540,6 +546,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         runSync();
       },
+      updatePatient: (idx, p) =>
+        setState((s) => {
+          const r = s.records[idx];
+          if (!r) return s;
+          const records = s.records.map((rec, i) => (i === idx ? { ...rec, ...p } : rec));
+          return {
+            ...s,
+            records,
+            alert: {
+              kind: 'edit',
+              title: 'แก้ไขข้อมูลผู้ป่วยแล้ว',
+              message: `บันทึกข้อมูลของ ${p.name || r.name} ทับของเดิมเรียบร้อย`,
+              detail: `HN ${r.hn}`,
+            },
+          };
+        }),
+      addIcd: (idx, code, name, kind) =>
+        setState((s) => {
+          const r = s.records[idx];
+          if (!r || r.icd.some(([cd]) => cd === code)) return s;
+          // เพิ่มเงียบ ๆ — รายการโผล่ในการ์ดทันที ไม่ต้องเด้งกล่องแจ้งสถานะ
+          const records = s.records.map((rec, i) => (i === idx ? { ...rec, icd: [...rec.icd, [code, name, kind] as [string, string, string]] } : rec));
+          return { ...s, records };
+        }),
+      removeIcd: (idx, code) =>
+        setState((s) => ({
+          ...s,
+          records: s.records.map((rec, i) => (i === idx ? { ...rec, icd: rec.icd.filter(([cd]) => cd !== code) } : rec)),
+        })),
       openEdit: (idx) => setState((s) => ({ ...s, editingIdx: idx, opdIdx: null })),
       closeEdit: () => setState((s) => ({ ...s, editingIdx: null })),
       resubmit: (idx, newValue) =>

@@ -523,6 +523,27 @@ const CLINICAL = {
 
 /** ตัวเลือกหมู่เลือดในฟอร์มลงทะเบียน */
 export const BLOOD_OPTIONS = ['ไม่ทราบ', 'O', 'A', 'B', 'AB'];
+/** ชุดตัวเลือกเชื้อชาติ/สัญชาติ (เรียงตามที่พบบ่อยใน รพ.สต.) */
+export const ETHNICITY_OPTIONS = ['ไทย', 'ลาว', 'เมียนมา', 'กัมพูชา', 'เวียดนาม', 'จีน', 'มาเลเซีย', 'อื่น ๆ'];
+/** รหัส ICD-10 ที่ใช้บ่อยใน รพ.สต. — สำหรับ popup ค้นหา/เพิ่มการวินิจฉัย */
+export const ICD_CATALOG: Array<[string, string]> = [
+  ['I10', 'Essential hypertension'],
+  ['E11.9', 'Type 2 DM without complications'],
+  ['E78.5', 'Dyslipidaemia, unspecified'],
+  ['J06.9', 'Acute upper respiratory infection'],
+  ['J00', 'Acute nasopharyngitis (common cold)'],
+  ['A09', 'Diarrhoea and gastroenteritis'],
+  ['K30', 'Functional dyspepsia'],
+  ['M54.5', 'Low back pain'],
+  ['R51', 'Headache'],
+  ['H10.9', 'Conjunctivitis, unspecified'],
+  ['L23.9', 'Allergic contact dermatitis'],
+  ['N39.0', 'Urinary tract infection'],
+  ['Z00.0', 'General medical examination'],
+  ['Z13.6', 'Screening for cardiovascular disorders'],
+];
+
+export const RELIGION_OPTIONS = ['พุทธ', 'อิสลาม', 'คริสต์', 'ฮินดู', 'ซิกข์', 'ไม่นับถือศาสนา', 'อื่น ๆ'];
 
 /** หมู่เลือดตามสัดส่วนที่พบจริงในไทย (O และ B พบมากสุด) */
 const BLOOD_TYPES = ['O', 'O', 'O', 'B', 'B', 'B', 'A', 'A', 'AB'];
