@@ -194,6 +194,7 @@ export const PatientListScreen: React.FC = () => {
       <Card rounded="xl" padded={0} shadow="md" style={{ borderWidth: 0 }}>
         {/* หัวตารางแบบหน้าหลัก: ชื่อ + จำนวนราย (ไม่มีเส้นคั่น — แถบหัวคอลัมน์สีเทาคั่นให้เอง) */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}>
+          {t.festive ? <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: t.colors.accent }} /> : null}
           <AppText size="md" weight="700" style={{ flex: 1 }}>
             รายการรับบริการวันนี้
           </AppText>

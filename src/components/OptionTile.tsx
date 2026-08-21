@@ -38,11 +38,8 @@ export const OptionTile: React.FC<OptionTileProps> = ({ active, onPress, childre
           borderRadius: t.radius.lg,
           borderWidth: active ? 1.5 : 1,
           borderColor: active ? c.primary : hover ? withAlpha(c.primary, 0.55) : c.border,
-          backgroundColor: active
-            ? withAlpha(c.primary, 0.06)
-            : hover
-              ? withAlpha(c.primary, 0.04)
-              : c.card,
+          // เลือก/ชี้แล้วพื้นคงเดิม — บอกสถานะด้วยขอบ + ป้าย "ใช้อยู่" เท่านั้น (ตามแบบ)
+          backgroundColor: c.card,
           padding: 12,
           gap: 7,
           ...WEB_NO_OUTLINE,

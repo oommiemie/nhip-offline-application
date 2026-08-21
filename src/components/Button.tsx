@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { useTheme, withAlpha } from '../theme';
+import { shade, useTheme, withAlpha } from '../theme';
 import { AppText } from './AppText';
 import { AnimatedPressable, useHoverFade, usePressScale } from './usePressScale';
 
@@ -73,7 +73,10 @@ export const Button: React.FC<ButtonProps> = ({
   const solid = v.bg !== 'transparent';
   const hoverBg =
     variant === 'primary'
-      ? c.accent
+      ? // ธีมเทศกาลบางชุด accent เป็นสีคนละโทนกับปุ่ม (Christmas = ทอง) — hover จึงสว่างขึ้นในเฉดเดิมแทน
+        t.festival === 'none'
+        ? c.accent
+        : shade(c.primary, 0.12)
       : variant === 'strong'
         ? c.primary
         : variant === 'destructive'

@@ -1,20 +1,12 @@
 import type { TextStyle, ViewStyle } from 'react-native';
 
 /** รหัสชุดสี — 'moph' คือธีมหลักตามดีไซน์ Figma, ที่เหลือพอร์ตมาจาก desktop comp เดิม */
-export type PaletteId =
-  | 'moph'
-  | 'ocean'
-  | 'mint'
-  | 'deepsea'
-  | 'sky'
-  | 'warm'
-  | 'coral'
-  | 'violet'
-  | 'forest'
-  | 'berry';
+export type PaletteId = 'moph' | 'ocean' | 'deepsea' | 'sky' | 'violet' | 'berry';
 
 export type Mode = 'light' | 'dark';
-export type FestivalId = 'none' | 'christmas' | 'newyear' | 'valentine' | 'songkran';
+/** ค่าที่ผู้ใช้เลือกในหน้าตั้งค่า — 'auto' = ตามธีมของเครื่อง (resolve เป็น Mode ก่อนใช้) */
+export type ModePref = Mode | 'auto';
+export type FestivalId = 'none' | 'christmas' | 'newyear' | 'valentine' | 'songkran' | 'halloween' | 'cny';
 export type FontId = 'googlesans' | 'noto' | 'sarabun' | 'plex' | 'prompt' | 'kanit';
 export type FontSizeId = '12' | '13' | '14' | '16' | '18';
 export type DensityId = 'compact' | 'normal' | 'comfortable';
@@ -43,6 +35,8 @@ export interface BaseColors {
   muted: string;
   mutedForeground: string;
   accent: string;
+  /** ทองเข้มพอที่จะใช้เป็นสีตัวอักษรบนพื้นสว่าง — ธีมปกติเท่ากับ accent */
+  accentStrong: string;
   accentForeground: string;
   destructive: string;
   destructiveForeground: string;
@@ -97,6 +91,24 @@ export interface KpiColors {
   neutral: string;
 }
 
+/** ชุดสีของ "ชั้นตกแต่ง" ประจำเทศกาล — ใช้เฉพาะเอฟเฟกต์/ของประดับ ไม่แตะสีข้อมูล */
+export interface FestiveDecor {
+  /** สีลูกบอลประดับ (ใช้กับอนุภาคหน้าล็อกอิน) */
+  ornaments: string[];
+  /** สีเกล็ดหิมะ — สุ่มวนตามลำดับ ขาวเป็นหลักแซมสีประดับ */
+  snow: string[];
+  /** ทองเข้มพอใช้เป็นตัวหนังสือ/ไอคอนบนพื้นสว่าง */
+  gold: string;
+  /** ทองสว่าง ใช้บนพื้นเข้มเท่านั้น */
+  goldLight: string;
+  /** สีเรืองของอนุภาคดวงเด่น */
+  glow: string;
+  /** ผงดาวพื้นหลัง */
+  dust: string;
+  /** สีฉากหลังมืดของ modal/drawer */
+  scrimBase: string;
+}
+
 export interface DensitySpec {
   /** ความสูงแถวตาราง */
   rowH: number;
@@ -137,6 +149,8 @@ export interface Theme {
   colors: BaseColors;
   tones: Record<Tone, ToneStyle>;
   kpi: KpiColors;
+  /** สีของชั้นตกแต่งเทศกาล — null เมื่อไม่ได้เปิดธีมเทศกาล */
+  festive: FestiveDecor | null;
   /** คืนชื่อฟอนต์ UI ตามน้ำหนัก เช่น t.font('600') */
   font: (weight?: FontWeight) => string;
   /** คืนชื่อฟอนต์ mono (JetBrains Mono) ตามน้ำหนัก */
@@ -150,13 +164,19 @@ export interface Theme {
 
 export interface ThemeSettings {
   palette: PaletteId;
-  mode: Mode;
+  mode: ModePref;
   festival: FestivalId;
   fontId: FontId;
   fontSize: FontSizeId;
   density: DensityId;
   panelMode: PanelMode;
   reduceMotion: boolean;
+  /** ขนาด sidebar บนจอกว้าง — 'compact' = รางไอคอนแคบตลอด */
+  sidebar: 'normal' | 'compact';
+  /** ดันน้ำหนักตัวอักษรทั้งระบบขึ้นหนึ่งขั้น */
+  fontBold: boolean;
+  /** ภาษาที่เลือก (เก็บค่าไว้ — ข้อความ UI ยังเป็นไทยในเวอร์ชันต้นแบบ) */
+  language: 'th' | 'en';
 }
 
 export type TextTone = keyof Pick<

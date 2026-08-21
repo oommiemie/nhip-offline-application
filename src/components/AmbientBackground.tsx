@@ -66,15 +66,19 @@ const Blob: React.FC<{
  */
 export const AmbientBackground: React.FC = () => {
   const t = useTheme();
+  const c = t.colors;
   const dim = t.isDark;
-  // วางบนพื้นมิ้นต์รอบนอก — ใช้แสงขาวเรือง + เขียวเข้มจาง ให้เห็นความต่างจากพื้น
+  // วางบนพื้นรอบนอก (c.sidebar) — แสงขาวเรือง + สีหลักของ "ธีมที่เลือกอยู่" จาง ๆ
+  // ใช้ token ล้วน (ring/accent/primary) เพื่อให้เปลี่ยนธีมแล้วแสงเปลี่ยนสีตาม ไม่ล็อกเขียว MOPH
   const a = dim ? 0.06 : NATIVE ? 0.14 : 0.55;
+  // ธีมเทศกาล: แสงพื้นหลังเปลี่ยนเป็นโทนของเทศกาล (คริสต์มาส = ครีมเทียน · สน · ไวน์ · ทอง)
+  const f = t.festive;
   return (
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
-      <Blob color={withAlpha('#FFFFFF', a)} size={480} top="-14%" left="-6%" driftX={54} driftY={40} durationMs={13000} reduceMotion={t.reduceMotion} />
-      <Blob color={withAlpha(dim ? '#52B788' : '#74C69D', a * 0.62)} size={400} top="34%" left="-9%" driftX={44} driftY={-34} durationMs={17000} reduceMotion={t.reduceMotion} />
-      <Blob color={withAlpha('#FFFFFF', a * 0.8)} size={420} bottom="-10%" left="4%" driftX={38} driftY={-40} durationMs={21000} reduceMotion={t.reduceMotion} />
-      <Blob color={withAlpha(dim ? '#40916C' : '#52B788', a * 0.5)} size={340} bottom="20%" right="-7%" driftX={-42} driftY={-28} durationMs={15000} reduceMotion={t.reduceMotion} />
+      <Blob color={withAlpha(f ? '#FFF6E2' : '#FFFFFF', a)} size={480} top="-14%" left="-6%" driftX={54} driftY={40} durationMs={13000} reduceMotion={t.reduceMotion} />
+      <Blob color={withAlpha(c.ring, a * 0.62)} size={400} top="34%" left="-9%" driftX={44} driftY={-34} durationMs={17000} reduceMotion={t.reduceMotion} />
+      <Blob color={f ? withAlpha(c.secondary, a * 0.3) : withAlpha('#FFFFFF', a * 0.8)} size={420} bottom="-10%" left="4%" driftX={38} driftY={-40} durationMs={21000} reduceMotion={t.reduceMotion} />
+      <Blob color={withAlpha(dim ? c.primary : c.accent, a * (f ? 0.85 : 0.5))} size={f ? 420 : 340} bottom="20%" right="-7%" driftX={-42} driftY={-28} durationMs={15000} reduceMotion={t.reduceMotion} />
     </View>
   );
 };

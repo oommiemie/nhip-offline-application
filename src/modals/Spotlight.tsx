@@ -199,7 +199,7 @@ export const Spotlight: React.FC<SpotlightProps> = ({ visible, onClose }) => {
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
-        style={{ flex: 1, backgroundColor: withAlpha('#0B2D22', 0.42), alignItems: 'center', paddingTop: '10%', paddingHorizontal: 20 }}
+        style={{ flex: 1, backgroundColor: withAlpha(t.festive?.scrimBase ?? '#0B2D22', 0.42), alignItems: 'center', paddingTop: '10%', paddingHorizontal: 20 }}
       >
         <Animated.View style={[{ width: '100%', maxWidth: 640 }, panel]}>
           <Pressable

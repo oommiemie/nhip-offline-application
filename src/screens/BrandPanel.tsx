@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, Platform, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { AppText, MedicalParticles, PARTICLE_SHAPES } from '../components';
+import { AppText, MedicalParticles, PARTICLE_SHAPES, XMAS_SHAPES } from '../components';
 import type { ParticleShape } from '../components';
 import { FigmaAssets } from '../assets';
-import { useTheme, withAlpha } from '../theme';
+import { shade, useTheme, withAlpha } from '../theme';
 
 /**
  * แผงแบรนด์ฝั่งซ้ายของหน้า Login / SSO (Figma node 15:6 "Hero-Panel-Left")
@@ -30,6 +30,9 @@ export const BrandPanel: React.FC<{ compact?: boolean }> = ({ compact = false })
     }
     return 'cross';
   });
+
+  /** ธีม Christmas ใช้ชุดรูปเทศกาลแทนชุดการแพทย์ */
+  const shapeSet = t.festival === 'christmas' ? XMAS_SHAPES : PARTICLE_SHAPES;
 
   const nd = Platform.OS !== 'web';
   const e1 = useRef(new Animated.Value(0)).current;
@@ -62,17 +65,23 @@ export const BrandPanel: React.FC<{ compact?: boolean }> = ({ compact = false })
     if (compact || t.reduceMotion || pinned.current) return;
     const id = setInterval(() => {
       setShape((cur) => {
-        const i = PARTICLE_SHAPES.findIndex((x) => x.id === cur);
-        return PARTICLE_SHAPES[(i + 1) % PARTICLE_SHAPES.length].id;
+        const i = shapeSet.findIndex((x) => x.id === cur);
+        return shapeSet[(i + 1) % shapeSet.length].id;
       });
     }, 8000);
     return () => clearInterval(id);
-  }, [compact, t.reduceMotion]);
+  }, [compact, t.reduceMotion, shapeSet]);
+
+  // สลับชุดรูปเมื่อเปลี่ยนธีมเทศกาล — เด้งไปรูปแรกของชุดใหม่ทันที
+  useEffect(() => {
+    if (pinned.current) return;
+    setShape((cur) => (shapeSet.some((x) => x.id === cur) ? cur : shapeSet[0].id));
+  }, [shapeSet]);
 
   const nextShape = () =>
     setShape((cur) => {
-      const i = PARTICLE_SHAPES.findIndex((x) => x.id === cur);
-      return PARTICLE_SHAPES[(i + 1) % PARTICLE_SHAPES.length].id;
+      const i = shapeSet.findIndex((x) => x.id === cur);
+      return shapeSet[(i + 1) % shapeSet.length].id;
     });
 
   if (compact) {
@@ -97,7 +106,16 @@ export const BrandPanel: React.FC<{ compact?: boolean }> = ({ compact = false })
     <View style={{ flex: 1 }} onLayout={(e) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
       {/* สนามอนุภาค — อยู่หลังเนื้อหา รับ gesture จากพื้นที่ว่าง */}
       {size ? (
-        <MedicalParticles width={size.w} height={size.h} shape={shape} onTap={nextShape} reduceMotion={t.reduceMotion} />
+        <MedicalParticles
+          width={size.w}
+          height={size.h}
+          shape={shape}
+          onTap={nextShape}
+          reduceMotion={t.reduceMotion}
+          tint={t.festive?.ornaments ?? t.colors.ring}
+          glowColor={t.festive?.glow}
+          dustColor={t.festive?.dust}
+        />
       ) : null}
 
       {/* เนื้อหาแบรนด์ (box-none ให้ gesture ทะลุลงสนามอนุภาคตรงพื้นที่ว่าง) */}
@@ -122,7 +140,7 @@ export const BrandPanel: React.FC<{ compact?: boolean }> = ({ compact = false })
         </View>
 
         <Animated.View style={rise(e3)}>
-          <AppText size={12} color="#B7E4C7">
+          <AppText size={12} color={withAlpha('#FFFFFF', 0.75)}>
             v2.0.1 (Stable)
           </AppText>
         </Animated.View>
@@ -178,6 +196,9 @@ export const SplitAuthLayout: React.FC<{ children: React.ReactNode; panelMaxWidt
   panelMaxWidth = 648,
 }) => {
   const t = useTheme();
+  const c = t.colors;
+  // ธีมพื้นฐานใช้สีหลัก · ธีมเทศกาลใช้สีคู่ประจำเทศกาล (Christmas = แดง, Halloween = ม่วง ฯลฯ)
+  const heroBase = t.festival === 'none' ? c.primary : c.secondary;
   const { width } = useWindowDimensions();
   const wide = width >= 900;
   const glow = useRef(new Animated.Value(0)).current;
@@ -197,7 +218,13 @@ export const SplitAuthLayout: React.FC<{ children: React.ReactNode; panelMaxWidt
   }, [t.reduceMotion]);
 
   return (
-    <LinearGradient colors={['#2D6A4F', '#40916C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    // ไล่เฉดในสีเดียว (เข้ม → กลาง) · ธีมเทศกาลใช้สีประจำเทศกาล เช่น Christmas = แดง
+    <LinearGradient
+      colors={[shade(heroBase, -0.34), shade(heroBase, -0.12), heroBase]}
+      start={{ x: 0.1, y: 0 }}
+      end={{ x: 0.9, y: 1 }}
+      style={{ flex: 1 }}
+    >
       <Animated.View
         pointerEvents="none"
         style={{
@@ -210,7 +237,7 @@ export const SplitAuthLayout: React.FC<{ children: React.ReactNode; panelMaxWidt
         }}
       >
         <LinearGradient
-          colors={[withAlpha('#D8F3DC', 0.16), 'transparent', withAlpha('#0B2D22', 0.18)]}
+          colors={[withAlpha(t.festive?.goldLight ?? '#FFFFFF', t.festive ? 0.2 : 0.14), 'transparent', withAlpha('#000000', 0.2)]}
           start={{ x: 0.1, y: 0 }}
           end={{ x: 0.9, y: 1 }}
           style={{ flex: 1 }}

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { AppText, Button, SelectField, StatusDot, TextField } from '../components';
+import { AppText, Button, SelectField, Snowfall, StatusDot, TextField } from '../components';
 import { BRANCHES } from '../state/mockData';
 import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme';
@@ -20,6 +20,8 @@ export const LoginCard: React.FC = () => {
   const { width } = useWindowDimensions();
   const cardPad = width >= 1100 ? 64 : 24;
 
+  /** ธีมคริสต์มาส: หิมะเม็ดเล็กตกในปุ่มเข้าสู่ระบบ */
+  const xmas = t.festival === 'christmas';
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('123456789');
   const [branch, setBranch] = useState('OPD');
@@ -160,15 +162,19 @@ export const LoginCard: React.FC = () => {
             </View>
 
             <View style={{ gap: 10 }}>
-              <Button
-                label="เข้าสู่ระบบบริการ"
-                variant="strong"
-                rounded="md"
-                size="lg"
-                full
-                disabled={!canSubmit}
-                onPress={submit}
-              />
+              {/* ธีม Christmas: หิมะเกาะสันปุ่ม และสะบัดร่วงทุกครั้งที่กด */}
+              <View style={{ position: 'relative' }}>
+                <Button
+                  label="เข้าสู่ระบบบริการ"
+                  variant="strong"
+                  rounded="md"
+                  size="lg"
+                  full
+                  disabled={!canSubmit}
+                  onPress={submit}
+                />
+                {xmas ? <Snowfall radius={t.radius.md} height={t.density.controlH + 6} reduceMotion={t.reduceMotion} /> : null}
+              </View>
               {/* ความสูงคงที่ กันเลย์เอาต์ขยับตอนข้อความหาย */}
               <View style={{ minHeight: 18, justifyContent: 'center' }}>
                 {canSubmit ? null : (

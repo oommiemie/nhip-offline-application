@@ -11,6 +11,7 @@ import {
   KpiCard,
   StatusDot,
   Pagination,
+  Snowfall,
   WireMesh,
 } from '../components';
 import type { Column } from '../components';
@@ -18,11 +19,13 @@ import { FigmaAssets } from '../assets';
 import { DOCTORS, STAGE_META, roomLabel } from '../state/mockData';
 import { useApp } from '../state/AppContext';
 import type { VisitRecord } from '../state/types';
-import { useTheme } from '../theme';
+import { useTheme, withAlpha } from '../theme';
 import { greeting, thaiToday } from '../utils/format';
 
 /** เขียวมิ้นต์ของ Figma — ใช้เป็นตัวหนังสือรองบนพื้นเขียวเข้ม และพื้น avatar */
 const MINT = '#B7E4C7';
+/** ครีมเทียน — ข้อความรองบนพื้นเข้มของธีมเทศกาล (มิ้นต์จะขัดกับพื้นแดง) */
+const FESTIVE_INK = '#F1E4C5';
 
 /** การ์ดสรุปงานกะปัจจุบัน (Figma 16:859 · session-tracker · #0B2D22 r24 pad16 gap16) */
 const ShiftSummary: React.FC = () => {
@@ -30,9 +33,9 @@ const ShiftSummary: React.FC = () => {
   const { state, derived } = useApp();
   const rows: Array<{ label: string; value: string; color?: string }> = [
     { label: 'ลงทะเบียนสะสม', value: `${state.records.length} ราย` },
-    { label: 'รอซิงค์คลาวด์', value: `${derived.pendingCount} ราย`, color: '#F59E0B' },
+    { label: 'รอซิงค์คลาวด์', value: `${derived.pendingCount} ราย`, color: t.festive ? t.festive.goldLight : '#F59E0B' },
     { label: 'ซิงค์ผ่านแล้ว', value: `${derived.passCount} ราย` },
-    { label: 'ไม่ผ่าน · ต้องแก้ไข', value: `${derived.failCount} ราย`, color: '#FF3B30' },
+    { label: 'ไม่ผ่าน · ต้องแก้ไข', value: `${derived.failCount} ราย`, color: t.festive ? t.colors.terminalErr : '#FF3B30' },
   ];
   return (
     <View style={[{ borderRadius: t.radius.xl, backgroundColor: t.colors.terminalBg, padding: 16, gap: 16 }, t.shadow.md]}>
@@ -42,7 +45,7 @@ const ShiftSummary: React.FC = () => {
       <View style={{ gap: 12 }}>
         {rows.map((r) => (
           <View key={r.label} style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <AppText size="sm" color={MINT} style={{ flex: 1 }}>
+            <AppText size="sm" color={t.festive ? FESTIVE_INK : MINT} style={{ flex: 1 }}>
               {r.label}
             </AppText>
             <AppText size="base" weight="700" mono color={r.color ?? '#FFFFFF'}>
@@ -62,6 +65,7 @@ const RoomStatus: React.FC = () => {
   return (
     <View style={[{ borderRadius: t.radius.xl, backgroundColor: c.card, padding: 16, gap: 4 }, t.shadow.md]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {t.festive ? <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: t.colors.accent }} /> : null}
         <AppText size="md" weight="700" style={{ flex: 1 }}>
           สถานะห้องปฏิบัติงาน
         </AppText>
@@ -134,6 +138,8 @@ export const DashboardScreen: React.FC = () => {
   const { state, actions, derived } = useApp();
   const { width } = useWindowDimensions();
   const wide = width >= 1180;
+  /** ธีม Christmas: แบนเนอร์โทนแดง + หิมะตกแทนตาข่าย */
+  const xmas = t.festival === 'christmas';
 
   /** ขนาดจริงของแบนเนอร์ — ใช้สร้างตาข่ายเส้นให้พอดีกล่อง */
   const [hero, setHero] = useState({ w: 0, h: 0 });
@@ -262,6 +268,7 @@ export const DashboardScreen: React.FC = () => {
       ]}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}>
+        {t.festive ? <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: t.colors.accent }} /> : null}
         <AppText size="md" weight="700" style={{ flex: 1 }}>
           คิวผู้ป่วยวันนี้
         </AppText>
@@ -308,7 +315,15 @@ export const DashboardScreen: React.FC = () => {
       {/* แบนเนอร์ทักทาย + KPI อยู่ในการ์ดเดียวกันตาม Figma (Frame 30) */}
       <View
         style={[
-          { borderRadius: t.radius.xl, backgroundColor: c.primaryStrong, padding: 16, gap: 24, overflow: 'hidden' },
+          {
+            borderRadius: t.radius.xl,
+            // ธีม Christmas: แบนเนอร์เป็นโทนแดงเทศกาลแทนเขียวเข้ม
+            backgroundColor: xmas ? c.secondary : c.primaryStrong,
+            ...(xmas ? { borderWidth: 1, borderColor: withAlpha(c.accent, 0.45) } : null),
+            padding: 16,
+            gap: 24,
+            overflow: 'hidden',
+          },
           t.shadow.md,
         ]}
         onLayout={(e) => {
@@ -316,16 +331,20 @@ export const DashboardScreen: React.FC = () => {
           setHero((s) => (Math.abs(s.w - w) < 1 && Math.abs(s.h - h) < 1 ? s : { w, h }));
         }}
       >
-        {/* ตาข่ายเส้นภูมิประเทศแบบเคลื่อนไหว (แทนภาพ mesh นิ่งของ Figma node 28:9617) */}
+        {/* พื้นหลังแบนเนอร์: ปกติเป็นตาข่ายภูมิประเทศ · ธีม Christmas เปลี่ยนเป็นหิมะตก */}
         <View style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, zIndex: 0, overflow: 'hidden' }}>
-          <WireMesh
-            width={hero.w}
-            height={hero.h}
-            color={MINT}
-            opacity={0.28}
-            fade="up"
-            reduceMotion={t.reduceMotion}
-          />
+          {xmas ? (
+            <Snowfall
+              height={hero.h}
+              radius={t.radius.xl}
+              count={Math.max(40, Math.round(hero.w / 19))}
+              scale={1.8}
+              colors={t.festive?.snow}
+              reduceMotion={t.reduceMotion}
+            />
+          ) : (
+            <WireMesh width={hero.w} height={hero.h} color={MINT} opacity={0.28} fade="up" reduceMotion={t.reduceMotion} />
+          )}
         </View>
         {/* ชิดบน — ให้ขอบบนปุ่มอยู่ที่ padding 16 ของการ์ด เสมอกับบรรทัดวันที่ */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', zIndex: 1 }}>
@@ -336,7 +355,7 @@ export const DashboardScreen: React.FC = () => {
             <AppText size="xxl" weight="700" color="#FFFFFF">
               {greeting()}, {state.userName}
             </AppText>
-            <AppText size="base" color={MINT}>
+            <AppText size="base" color={xmas ? FESTIVE_INK : MINT}>
               {state.facility.name} • สาขา {state.branch} • ประจำ {state.room}
             </AppText>
           </View>

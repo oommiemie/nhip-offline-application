@@ -1,10 +1,10 @@
 import React from 'react';
-import { Platform, Pressable, View, useWindowDimensions } from 'react-native';
+import { Animated, Platform, Pressable, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useApp } from '../state/AppContext';
-import { useTheme, withAlpha } from '../theme';
+import { useTheme, useThemeContext, withAlpha } from '../theme';
 import { AmbientBackground, AnimatedPressable, AppText, StatusDot, Tooltip, useHoverFade, usePressScale } from '../components';
 import { NAV, type NavDef } from './navItems';
 import { Spotlight } from '../modals/Spotlight';
@@ -22,6 +22,8 @@ export const NhipMark: React.FC<{ size?: number }> = ({ size = 48 }) => {
         backgroundColor: t.colors.secondary,
         alignItems: 'center',
         justifyContent: 'center',
+        // ธีมเทศกาล: วงแหวนทองรอบตราแบรนด์
+        ...(t.festive ? { borderWidth: 2, borderColor: t.colors.accent } : null),
       }}
     >
       <AppText size={Math.round(size * 0.67)} weight="600" color="#FFFFFF" style={{ lineHeight: size * 0.82 }}>
@@ -67,9 +69,60 @@ const NavItem: React.FC<{ def: NavDef; active: boolean; compact: boolean; badge?
         },
         active ? t.shadow.md : null,
         press.pressStyle,
+        // ป้ายชื่อยื่นออกนอกราง — ต้องยกชั้นตอน hover ไม่งั้นโดนแผงเนื้อหาทับ
+        compact && h.hover ? { zIndex: 40 } : null,
       ]}
     >
       <Ionicons name={def.icon} size={20} color={fg} />
+      {compact ? (
+        /* sidebar เล็ก: ชี้เมาส์แล้วป้ายชื่อเมนูไถลออกมาด้านขวา พร้อมหัวลูกศรชี้กลับราง */
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: '100%',
+            marginLeft: 14,
+            opacity: h.progress,
+            transform: [{ translateX: h.num(-6, 0) }] as never,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: 2,
+                backgroundColor: t.isDark ? '#E7F8EC' : '#0B2D22',
+                transform: [{ rotate: '45deg' }],
+                marginRight: -6,
+              }}
+            />
+            <View
+              style={[
+                {
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 7,
+                  backgroundColor: t.isDark ? '#E7F8EC' : '#0B2D22',
+                  borderRadius: 9,
+                  paddingHorizontal: 11,
+                  paddingVertical: 6,
+                },
+                t.shadow.md,
+              ]}
+            >
+              <AppText size="sm" weight="600" color={t.isDark ? '#0B2D22' : '#E7F8EC'} numberOfLines={1} style={{ maxWidth: 200 }}>
+                {def.label}
+              </AppText>
+              {badge ? (
+                <AppText size="xs" weight="700" mono color={t.isDark ? '#0B2D22' : '#FBD38D'}>
+                  {badge}
+                </AppText>
+              ) : null}
+            </View>
+          </View>
+        </Animated.View>
+      ) : null}
       {compact ? null : (
         <AppText size="base" weight={active ? '600' : '500'} color={fg} style={{ flex: 1 }}>
           {def.label}
@@ -130,6 +183,7 @@ const UserCard: React.FC<{ compact: boolean }> = ({ compact }) => {
         padding: 8,
         borderRadius: t.radius.pill,
         backgroundColor: t.colors.primaryStrong,
+        ...(t.festive ? { borderWidth: 1, borderColor: withAlpha(t.colors.accent, 0.55) } : null),
       }}
     >
       <View
@@ -263,7 +317,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const { width } = useWindowDimensions();
 
   const layout: 'full' | 'rail' | 'phone' = width >= 1080 ? 'full' : width >= 760 ? 'rail' : 'phone';
-  const compact = layout === 'rail';
+  // ตั้งค่า "Sidebar เล็ก" = บังคับรางไอคอนแคบแม้จอกว้าง
+  const { settings: themeSettings } = useThemeContext();
+  const compact = layout === 'rail' || (layout === 'full' && themeSettings.sidebar === 'compact');
 
   const [spotlight, setSpotlight] = React.useState(false);
   // คีย์ลัดเปิด Spotlight: ⌘K (mac) / Ctrl+K
@@ -279,14 +335,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
+  // ตัวอักษรบน sidebar — โหมดมืดใช้สีตัวอักษรหลัก (secondary เป็นสีเข้ม อ่านไม่ออกบนพื้นเข้ม)
+  const sidebarInk = t.isDark ? c.foreground : c.secondary;
   // Figma 16:859 · Frame 21 — 250 กว้าง · โปร่งใสบนพื้นมิ้นต์ · pad16
   const sidebar = layout !== 'phone' && (
     <View
       style={{
-        width: layout === 'full' ? 250 : 80,
+        width: compact ? 80 : 250,
         paddingHorizontal: 16,
         paddingVertical: 16,
         gap: 20,
+        zIndex: 20,
       }}
     >
       <View
@@ -301,10 +360,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <NhipMark size={44} />
         {compact ? null : (
           <View style={{ flex: 1 }}>
-            <AppText size="lg" weight="700" color={c.secondary} numberOfLines={1}>
+            <AppText size="lg" weight="700" color={sidebarInk} numberOfLines={1}>
               NHIP
             </AppText>
-            <AppText size="xs" color={withAlpha(c.secondary, 0.7)} numberOfLines={1}>
+            <AppText size="xs" color={withAlpha(sidebarInk, 0.7)} numberOfLines={1}>
               {state.facility.name}
             </AppText>
           </View>
@@ -318,7 +377,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <AppText
                 size="xs"
                 weight="600"
-                color={withAlpha(c.secondary, 0.55)}
+                color={withAlpha(sidebarInk, 0.62)}
                 style={{ letterSpacing: 0.8, paddingHorizontal: 4, marginBottom: 2 }}
               >
                 {section.toUpperCase()}
@@ -400,6 +459,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 : withAlpha(c.background, 0.96),
             borderRadius: desktop ? t.radius.xl : 0,
             overflow: 'hidden',
+            // ธีมเทศกาล: เส้นขอบทองบางรอบแผงเนื้อหา
+            ...(t.festive ? { borderWidth: 1, borderColor: withAlpha(c.accent, 0.4) } : null),
             ...(Platform.OS === 'web'
               ? ({
                   backdropFilter: 'blur(34px) saturate(1.25)',

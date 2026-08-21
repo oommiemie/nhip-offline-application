@@ -14,6 +14,7 @@ import {
   LogConsole,
   Pagination,
   ProgressBar,
+  Snowfall,
   SectionCard,
   StatusDot,
   UploadStream,
@@ -24,7 +25,7 @@ import { FigmaAssets } from '../assets';
 import { SYNC_STEP_LABELS, syncSteps } from '../state/mockData';
 import { useApp } from '../state/AppContext';
 import type { VisitRecord } from '../state/types';
-import { useTheme } from '../theme';
+import { useTheme, withAlpha } from '../theme';
 
 const syncBadge = (r: VisitRecord, syncing: boolean): { label: string; tone: 'success' | 'destructive' | 'info' | 'warning' } => {
   if (r.sync === 'pass') return { label: 'อัปเดตผ่าน', tone: 'success' };
@@ -42,6 +43,11 @@ export const SyncScreen: React.FC = () => {
   const wide = width >= 1180;
   /** ต้องยืนยันตัวตน MOPH SSO ก่อนจึงจะอัปโหลดข้อมูลขึ้น Cloud ได้ */
   const authed = state.sso === 'in';
+  /** ธีม Christmas: hero เป็นการ์ดโทนแดง + หิมะตกแทนตาข่าย/สายข้อมูล */
+  const xmas = t.festival === 'christmas';
+  /** ตัวหนังสือบน hero — พื้นแดงเทศกาลใช้ตัวขาว */
+  const heroFg = xmas ? '#FFFFFF' : undefined;
+  const heroMuted = xmas ? withAlpha('#FFFFFF', 0.82) : undefined;
   // ขนาดจริงของ hero — พื้นหลังตกแต่ง (สายข้อมูล + ตาข่าย) วาดตามขนาดนี้
   const [hero, setHero] = useState({ w: 0, h: 0 });
   const meshH = Math.round(hero.h * 0.45);
@@ -135,7 +141,9 @@ export const SyncScreen: React.FC = () => {
         style={[
           {
             borderRadius: t.radius.xl,
-            backgroundColor: c.card,
+            // ธีม Christmas: พื้น hero เป็นโทนแดงอ่อนของเทศกาล
+            backgroundColor: xmas ? c.secondary : c.card,
+            ...(xmas ? { borderWidth: 1, borderColor: withAlpha(c.accent, 0.45) } : null),
             padding: 16,
             gap: 24,
             overflow: 'hidden',
@@ -147,25 +155,39 @@ export const SyncScreen: React.FC = () => {
           setHero((s) => (Math.abs(s.w - w) < 1 && Math.abs(s.h - h) < 1 ? s : { w, h }));
         }}
       >
-        {/* สายเม็ดข้อมูลไหลขึ้นคลาวด์ (ผ่านหลังการ์ด KPI) */}
-        <UploadStream
-          width={hero.w}
-          height={Math.round(hero.h * 0.62)}
-          color={c.ring}
-          fadeColor={c.card}
-          reduceMotion={t.reduceMotion}
-        />
-        {/* ตาข่ายภูมิประเทศเขียวที่ขอบล่างการ์ด — ชัดที่ก้นการ์ดแล้วจางขึ้นบน */}
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: meshH, overflow: 'hidden' }}>
-          <WireMesh
-            width={hero.w}
-            height={meshH}
-            color={c.ring}
-            opacity={t.isDark ? 0.34 : 0.5}
-            fade="up"
+        {xmas ? (
+          /* ธีม Christmas: หิมะตกทั้งการ์ดแทนสายข้อมูล + ตาข่าย */
+          <Snowfall
+            height={hero.h}
+            radius={t.radius.xl}
+            count={Math.max(40, Math.round(hero.w / 19))}
+            scale={1.8}
+            colors={t.festive?.snow}
             reduceMotion={t.reduceMotion}
           />
-        </View>
+        ) : (
+          <>
+            {/* สายเม็ดข้อมูลไหลขึ้นคลาวด์ (ผ่านหลังการ์ด KPI) */}
+            <UploadStream
+              width={hero.w}
+              height={Math.round(hero.h * 0.62)}
+              color={c.ring}
+              fadeColor={c.card}
+              reduceMotion={t.reduceMotion}
+            />
+            {/* ตาข่ายภูมิประเทศเขียวที่ขอบล่างการ์ด — ชัดที่ก้นการ์ดแล้วจางขึ้นบน */}
+            <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: meshH, overflow: 'hidden' }}>
+              <WireMesh
+                width={hero.w}
+                height={meshH}
+                color={c.ring}
+                opacity={t.isDark ? 0.34 : 0.5}
+                fade="up"
+                reduceMotion={t.reduceMotion}
+              />
+            </View>
+          </>
+        )}
 
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', zIndex: 1 }}>
           <View style={{ flex: 1, minWidth: 260, gap: 8 }}>
@@ -173,7 +195,7 @@ export const SyncScreen: React.FC = () => {
             <AppText
               size="hero"
               weight="700"
-              color={t.isDark ? c.foreground : c.secondary}
+              color={heroFg ?? (t.isDark ? c.foreground : c.secondary)}
               style={{ lineHeight: Math.round(t.fs.hero * 1.2) }}
             >
               Sync ข้อมูลขึ้น Cloud
@@ -182,15 +204,15 @@ export const SyncScreen: React.FC = () => {
             {state.sso === 'in' ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name="checkmark-circle" size={17} color={t.isDark ? c.accent : c.primary} />
-                  <AppText size="base" weight="600" color={t.isDark ? c.accent : c.primaryStrong}>
+                  <Ionicons name="checkmark-circle" size={17} color={heroFg ?? (t.isDark ? c.accent : c.primary)} />
+                  <AppText size="base" weight="600" color={heroFg ?? (t.isDark ? c.accent : c.primaryStrong)}>
                     ยืนยันตัวตน SSO แล้ว
                   </AppText>
                 </View>
-                <AppText size="base" muted>
+                <AppText size="base" muted={!heroMuted} color={heroMuted}>
                   ·
                 </AppText>
-                <AppText size="base" muted mono>
+                <AppText size="base" muted={!heroMuted} color={heroMuted} mono>
                   {state.ssoUser} · {state.ssoTime}
                 </AppText>
                 <Chip
@@ -206,8 +228,8 @@ export const SyncScreen: React.FC = () => {
             ) : (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                  <StatusDot color={c.destructive} size={7} />
-                  <AppText size="base" muted>
+                  <StatusDot color={xmas ? '#FFD9DC' : c.destructive} size={7} />
+                  <AppText size="base" muted={!heroMuted} color={heroMuted}>
                     ยังไม่ยืนยันตัวตน — ต้องเข้าสู่ระบบ MOPH SSO ก่อนเริ่มซิงค์
                   </AppText>
                 </View>

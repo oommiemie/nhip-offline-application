@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable } from 'react-native';
 
+import { withAlpha } from '../theme';
+
 /**
  * สนามอนุภาคแบบ volumetric 3D (แนว particle-cloud ของ getlayers)
  * - จุด ~560 เม็ดมีพิกัด x,y,z จริง + ผงดาวพื้นหลัง ~46 เม็ด
@@ -11,7 +13,17 @@ import { Animated, Easing, Platform, Pressable } from 'react-native';
  * - interactive: ลาก/hover เอียงมุมกล้อง · แตะสลับรูป · เคารพ reduceMotion
  */
 
-export type ParticleShape = 'cross' | 'heart' | 'dna' | 'neuron' | 'stetho';
+export type ParticleShape =
+  | 'cross'
+  | 'heart'
+  | 'dna'
+  | 'neuron'
+  | 'stetho'
+  | 'xmasTree'
+  | 'gift'
+  | 'candyCane'
+  | 'wreath'
+  | 'snowflake';
 
 export const PARTICLE_SHAPES: Array<{ id: ParticleShape; label: string }> = [
   { id: 'cross', label: 'กากบาท' },
@@ -19,6 +31,15 @@ export const PARTICLE_SHAPES: Array<{ id: ParticleShape; label: string }> = [
   { id: 'dna', label: 'เกลียว DNA' },
   { id: 'neuron', label: 'เซลล์ประสาท' },
   { id: 'stetho', label: 'หูฟังแพทย์' },
+];
+
+/** ชุดรูปประจำเทศกาล Christmas — ต้นคริสต์มาส · กล่องของขวัญ · ลูกกวาด · พวงมาลัย */
+export const XMAS_SHAPES: Array<{ id: ParticleShape; label: string }> = [
+  { id: 'xmasTree', label: 'ต้นคริสต์มาส' },
+  { id: 'gift', label: 'กล่องของขวัญ' },
+  { id: 'candyCane', label: 'ลูกกวาดไม้เท้า' },
+  { id: 'wreath', label: 'พวงมาลัยคริสต์มาส' },
+  { id: 'snowflake', label: 'เกล็ดน้ำแข็ง' },
 ];
 
 interface P3 {
@@ -270,7 +291,189 @@ const stetho3d = (s: number): P3[] => {
   return fit(pts);
 };
 
+/** ต้นคริสต์มาส — พุ่มสามชั้นทรงกรวย + ลำต้น + ดาวยอด (มีความหนาแกน z) */
+const xmasTree3d = (s: number): P3[] => {
+  const pts: P3[] = [];
+  const H = s * 1.5;
+  const tiers: Array<[number, number, number]> = [
+    // [ยอดชั้น (0=บนสุด), ความสูงชั้น, รัศมีฐานชั้น]
+    [-H * 0.5, H * 0.42, s * 0.34],
+    [-H * 0.24, H * 0.46, s * 0.52],
+    [H * 0.06, H * 0.5, s * 0.72],
+  ];
+  tiers.forEach(([top, h, r]) => {
+    const n = 220;
+    for (let i = 0; i < n; i++) {
+      const u = Math.random();
+      const y = top + u * h;
+      const rr = r * u; // กรวย: กว้างขึ้นตามความสูงลง
+      const a = Math.random() * Math.PI * 2;
+      const rad = rr * (0.75 + Math.random() * 0.25);
+      pts.push({ x: Math.cos(a) * rad, y, z: Math.sin(a) * rad });
+    }
+  });
+  // ลำต้น
+  for (let i = 0; i < 70; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const rad = s * 0.1 * Math.sqrt(Math.random());
+    pts.push({ x: Math.cos(a) * rad, y: H * 0.56 + Math.random() * H * 0.16, z: Math.sin(a) * rad });
+  }
+  // ดาวบนยอด
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * Math.PI * 2;
+    const spike = i % 2 === 0 ? s * 0.2 : s * 0.09;
+    pts.push({ x: Math.cos(a) * spike, y: -H * 0.62 + Math.sin(a) * spike, z: jit(0, s * 0.05) });
+  }
+  return fit(pts);
+};
+
+/** กล่องของขวัญ — ลูกบาศก์โปร่ง + ริบบิ้นไขว้ + โบว์ด้านบน */
+const gift3d = (s: number): P3[] => {
+  const pts: P3[] = [];
+  const a = s * 0.62;
+  const step = s * 0.055;
+  // ผิวกล่อง 6 ด้าน (เก็บเฉพาะผิว ไม่ยัดไส้ทึบ)
+  for (let x = -a; x <= a; x += step) {
+    for (let y = -a; y <= a; y += step) {
+      pts.push({ x, y, z: a }, { x, y, z: -a }, { x, y: a, z: y }, { x, y: -a, z: y }, { x: a, y, z: x }, { x: -a, y, z: x });
+    }
+  }
+  // ริบบิ้นไขว้กลางกล่อง (แถบหนา)
+  const band = s * 0.09;
+  for (let u = -a; u <= a; u += step * 0.6) {
+    for (let w = -band; w <= band; w += step * 0.6) {
+      pts.push({ x: w, y: u, z: a + step * 0.4 }, { x: u, y: w, z: a + step * 0.4 });
+      pts.push({ x: w, y: -a - step * 0.4, z: u }, { x: u, y: -a - step * 0.4, z: w });
+    }
+  }
+  // โบว์สองห่วงบนฝากล่อง
+  for (let i = 0; i < 150; i++) {
+    const th = (i / 150) * Math.PI * 2;
+    const r = s * 0.2;
+    const cx = Math.cos(th) * r;
+    const cy = Math.sin(th) * r * 0.55;
+    pts.push({ x: -r * 0.75 + cx * 0.7, y: -a - Math.abs(cy) - s * 0.05, z: cy });
+    pts.push({ x: r * 0.75 + cx * 0.7, y: -a - Math.abs(cy) - s * 0.05, z: cy });
+  }
+  return fit(pts);
+};
+
+/** ลูกกวาดไม้เท้า — แท่งตรง + หัวโค้ง เป็นท่อกลมมีความหนา */
+const candyCane3d = (s: number): P3[] => {
+  const pts: P3[] = [];
+  const tube = s * 0.13;
+  const ring = (cx: number, cy: number, cz: number) => {
+    for (let k = 0; k < 7; k++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = tube * Math.sqrt(Math.random());
+      pts.push({ x: cx + Math.cos(a) * r, y: cy + jit(0, tube * 0.6), z: cz + Math.sin(a) * r });
+    }
+  };
+  // ก้านตรง
+  for (let y = -s * 0.1; y <= s * 0.95; y += s * 0.018) ring(s * 0.34, y, 0);
+  // หัวโค้ง (ครึ่งวงกลม)
+  const R = s * 0.34;
+  for (let i = 0; i <= 90; i++) {
+    const th = Math.PI + (i / 90) * Math.PI;
+    ring(Math.cos(th) * -R, -s * 0.1 + Math.sin(th) * -R, 0);
+  }
+  return fit(pts);
+};
+
+/** พวงมาลัยคริสต์มาส — วงแหวนพุ่มหนา + โบว์ล่าง + ลูกบอลประดับ */
+const wreath3d = (s: number): P3[] => {
+  const pts: P3[] = [];
+  const R = s * 0.72;
+  const tube = s * 0.2;
+  for (let i = 0; i < 620; i++) {
+    const th = Math.random() * Math.PI * 2;
+    const ph = Math.random() * Math.PI * 2;
+    const r = tube * (0.55 + Math.random() * 0.45);
+    pts.push({
+      x: (R + Math.cos(ph) * r) * Math.cos(th),
+      y: (R + Math.cos(ph) * r) * Math.sin(th),
+      z: Math.sin(ph) * r,
+    });
+  }
+  // โบว์ด้านล่าง
+  for (let i = 0; i < 130; i++) {
+    const th = (i / 130) * Math.PI * 2;
+    const rr = s * 0.24;
+    const cx = Math.cos(th) * rr;
+    const cy = Math.sin(th) * rr * 0.5;
+    pts.push({ x: -rr * 0.7 + cx * 0.7, y: R + Math.abs(cy) * 0.6 + s * 0.06, z: cy });
+    pts.push({ x: rr * 0.7 + cx * 0.7, y: R + Math.abs(cy) * 0.6 + s * 0.06, z: cy });
+  }
+  // ลูกบอลประดับรอบวง
+  for (let b = 0; b < 6; b++) {
+    const th = (b / 6) * Math.PI * 2 + 0.4;
+    const bx = Math.cos(th) * R;
+    const by = Math.sin(th) * R;
+    for (let i = 0; i < 26; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const p = Math.random() * Math.PI;
+      const r = s * 0.11 * Math.cbrt(Math.random());
+      pts.push({ x: bx + r * Math.sin(p) * Math.cos(a), y: by + r * Math.sin(p) * Math.sin(a), z: r * Math.cos(p) + tube * 0.6 });
+    }
+  }
+  return fit(pts);
+};
+
+/** เกล็ดน้ำแข็ง — 6 แฉกสมมาตร แต่ละแฉกมีกิ่งข้างคู่ + ปลายแยกเป็นสองง่าม */
+const snowflake3d = (s: number): P3[] => {
+  const pts: P3[] = [];
+  const R = s * 0.95;
+  const th = s * 0.035;
+  /** ลากเส้นเป็นแนวจุดหนา ๆ จาก (x1,y1) ไป (x2,y2) */
+  const seg = (x1: number, y1: number, x2: number, y2: number, n: number) => {
+    for (let i = 0; i <= n; i++) {
+      const u = i / n;
+      pts.push({
+        x: jit(x1 + (x2 - x1) * u, th),
+        y: jit(y1 + (y2 - y1) * u, th),
+        z: (Math.random() * 2 - 1) * th * 1.6,
+      });
+    }
+  };
+  for (let a = 0; a < 6; a++) {
+    const ang = (a / 6) * Math.PI * 2;
+    const ux = Math.cos(ang);
+    const uy = Math.sin(ang);
+    // แกนแฉกหลัก
+    seg(0, 0, ux * R, uy * R, 46);
+    // กิ่งข้างคู่ 3 ระดับ เอียง ±55°
+    [0.36, 0.58, 0.78].forEach((f, i) => {
+      const bx = ux * R * f;
+      const by = uy * R * f;
+      const len = R * (0.3 - i * 0.06);
+      [1, -1].forEach((sgn) => {
+        const bang = ang + sgn * 0.96;
+        seg(bx, by, bx + Math.cos(bang) * len, by + Math.sin(bang) * len, 16);
+      });
+    });
+    // ปลายแยกสองง่าม
+    const tipLen = R * 0.2;
+    [1, -1].forEach((sgn) => {
+      const bang = ang + sgn * 0.72;
+      seg(ux * R, uy * R, ux * R + Math.cos(bang) * tipLen, uy * R + Math.sin(bang) * tipLen, 12);
+    });
+  }
+  // แกนกลางเป็นก้อนกลมเล็ก ๆ
+  for (let i = 0; i < 90; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const p = Math.random() * Math.PI;
+    const r = s * 0.1 * Math.cbrt(Math.random());
+    pts.push({ x: r * Math.sin(p) * Math.cos(a), y: r * Math.sin(p) * Math.sin(a), z: r * Math.cos(p) });
+  }
+  return fit(pts);
+};
+
 const GENERATORS: Record<ParticleShape, (s: number) => P3[]> = {
+  xmasTree: xmasTree3d,
+  snowflake: snowflake3d,
+  gift: gift3d,
+  candyCane: candyCane3d,
+  wreath: wreath3d,
   cross: cross3d,
   heart: heart3d,
   dna: dna3d,
@@ -279,13 +482,17 @@ const GENERATORS: Record<ParticleShape, (s: number) => P3[]> = {
 };
 
 /** สี 5 ชั้น: ขาวร้อน → มินต์ → เขียวหมอก (สุ่มถ่วงน้ำหนัก) */
-const pickColor = (): string => {
+/** สี 5 ชั้น: ขาวล้วน → ขาวจาง → สีธีมจาง (รับ tint จากธีมที่เลือก ไม่ล็อกเขียว MOPH) */
+const pickColor = (tint: string | string[]): string => {
   const r = Math.random();
-  if (r < 0.3) return '#FFFFFF';
-  if (r < 0.55) return '#EFFDF3';
-  if (r < 0.78) return '#CFF0DA';
-  if (r < 0.92) return '#A8E3BF';
-  return '#7FCC9F';
+  // ส่งชุดสีมา (ธีมเทศกาล) = เพิ่มสัดส่วนเม็ดสีให้เห็นของประดับชัดขึ้น · สีเดียว = สัดส่วนเดิม
+  const pool = Array.isArray(tint) ? tint : null;
+  const w = pool ? [0.26, 0.48, 0.66, 0.88] : [0.3, 0.55, 0.78, 0.92];
+  if (r < w[0]) return '#FFFFFF';
+  if (r < w[1]) return withAlpha('#FFFFFF', 0.82);
+  if (r < w[2]) return withAlpha('#FFFFFF', 0.6);
+  const cc = pool ? pool[Math.floor(Math.random() * pool.length)] : (tint as string);
+  return r < w[3] ? withAlpha(cc, 0.8) : cc;
 };
 
 /** ขนาด 4 ระดับ: ผงละเอียด/เม็ดหลัก/เม็ดเด่น/ดวงไฮไลต์เรืองแสง */
@@ -302,6 +509,12 @@ const K = 28;
 const SPIN_INPUT = Array.from({ length: K + 1 }, (_, k) => k / K);
 
 export interface MedicalParticlesProps {
+  /** สีเม็ดเน้น — ส่งได้ทั้งสีเดียวหรือชุดสีประดับของเทศกาล (ค่าเริ่มต้น = มิ้นต์เดิม) */
+  tint?: string | string[];
+  /** สีเรืองของเม็ดไฮไลต์ */
+  glowColor?: string;
+  /** สีผงดาวพื้นหลัง */
+  dustColor?: string;
   width: number;
   height: number;
   shape: ParticleShape;
@@ -315,8 +528,13 @@ export const MedicalParticles: React.FC<MedicalParticlesProps> = ({
   shape,
   onTap,
   reduceMotion = false,
+  tint = '#A8E3BF',
+  glowColor = '#CFF3DA',
+  dustColor = '#E7F8EC',
 }) => {
   const nativeDriver = Platform.OS !== 'web';
+  // key แบบสตริง — ชุดสีที่ส่งมาเป็น array ใหม่ทุกเรนเดอร์ได้โดยไม่ทำให้อนุภาค 800 เม็ดถูกสร้างใหม่
+  const tintKey = Array.isArray(tint) ? tint.join('|') : tint;
   const s = Math.min(width, height) * 0.38;
   const cx = width / 2;
   const cy = height * 0.55;
@@ -339,7 +557,7 @@ export const MedicalParticles: React.FC<MedicalParticlesProps> = ({
         const ang = Math.random() * Math.PI * 2;
         const mag = 0.7 + Math.random() * 1.1;
         return {
-          color: pickColor(),
+          color: pickColor(tint),
           ...pickTier(),
           par: (Math.random() - 0.15) * 26,
           dim: 0.45 + Math.random() * 0.45,
@@ -350,7 +568,8 @@ export const MedicalParticles: React.FC<MedicalParticlesProps> = ({
           scatDY: Math.sin(ang) * mag * 0.85,
         };
       }),
-    []
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tintKey]
   );
 
   // ผงดาวพื้นหลัง — ตำแหน่งคงที่ ระยิบเบา ๆ
@@ -486,7 +705,7 @@ export const MedicalParticles: React.FC<MedicalParticlesProps> = ({
             width: d.size,
             height: d.size,
             borderRadius: d.size / 2,
-            backgroundColor: '#E7F8EC',
+            backgroundColor: dustColor,
             opacity: (d.twSel ? tw1 : tw2).interpolate({ inputRange: [0, 0.5, 1], outputRange: [d.base, d.base * 0.35, d.base] }),
           }}
         />
@@ -517,7 +736,7 @@ export const MedicalParticles: React.FC<MedicalParticlesProps> = ({
               opacity: Animated.multiply(p.depthOpacity, p.twinkle),
               ...(p.glow > 0
                 ? {
-                    shadowColor: '#CFF3DA',
+                    shadowColor: glowColor,
                     shadowOpacity: 1,
                     shadowRadius: p.glow === 2 ? 13 : 6,
                     shadowOffset: { width: 0, height: 0 },

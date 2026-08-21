@@ -87,7 +87,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         style={{
           flex: 1,
           // drawer ไม่มีฉากหลังมืด — เห็นหน้าจอเดิมเต็ม ๆ (กดพื้นที่ว่างเพื่อปิดได้เหมือนเดิม)
-          backgroundColor: drawer ? 'transparent' : withAlpha('#0B2D22', 0.45),
+          backgroundColor: drawer ? 'transparent' : withAlpha(t.festive?.scrimBase ?? '#0B2D22', 0.45),
           flexDirection: 'row',
           justifyContent: drawer ? 'flex-end' : 'center',
           alignItems: drawer ? 'stretch' : 'center',

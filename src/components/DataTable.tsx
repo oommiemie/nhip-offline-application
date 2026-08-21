@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 
-import { useTheme } from '../theme';
+import { useTheme, withAlpha } from '../theme';
 import { AppText } from './AppText';
 
 export interface Column<T> {
@@ -60,6 +60,8 @@ export function DataTable<T>({
           flexDirection: 'row',
           backgroundColor: c.tableHeader,
           paddingHorizontal: 8,
+          // ธีมเทศกาล: ขีดทองใต้หัวตาราง
+          ...(t.festive ? { borderBottomWidth: 2, borderBottomColor: withAlpha(c.accent, 0.5) } : null),
         }}
       >
         {columns.map((col) => (

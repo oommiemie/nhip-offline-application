@@ -254,7 +254,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
                         justifyContent: 'center',
                       }}
                     >
-                      <AppText size="sm" color={on ? c.accent : c.foreground} weight={on ? '600' : '400'} numberOfLines={1}>
+                      <AppText size="sm" color={on ? c.accentStrong : c.foreground} weight={on ? '600' : '400'} numberOfLines={1}>
                         {label}
                       </AppText>
                     </Pressable>

@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { resolveColors, resolveKpi, resolveTones } from './palettes';
+import { resolveColors, resolveFestive, resolveKpi, resolveTones } from './palettes';
 import { monoFontFamily, uiFontFamily } from './fonts';
 import type {
   DensityId,
@@ -11,6 +11,7 @@ import type {
   FontSizes,
   FontWeight,
   Mode,
+  ModePref,
   PaletteId,
   PanelMode,
   Theme,
@@ -26,6 +27,18 @@ const DEFAULT_SETTINGS: ThemeSettings = {
   density: 'normal',
   panelMode: 'drawer',
   reduceMotion: false,
+  sidebar: 'normal',
+  fontBold: false,
+  language: 'th',
+};
+
+/** ตัวหนาทั้งระบบ = ดันน้ำหนักขึ้นหนึ่งขั้น (700 คงเดิม — ไม่มีไฟล์หนากว่านั้น) */
+const BOLD_BUMP: Record<FontWeight, FontWeight> = { '400': '500', '500': '600', '600': '700', '700': '700' };
+
+/** โหมดอัตโนมัติอิงเวลาเครื่อง: 06:00–17:59 สว่าง · 18:00–05:59 มืด */
+const isNightNow = (): boolean => {
+  const h = new Date().getHours();
+  return h >= 18 || h < 6;
 };
 
 /** แถว/คอนโทรลตามระดับความหนาแน่น — ปรับให้เหมาะ touch target ของแท็บเล็ต (≥44px) */
@@ -55,13 +68,16 @@ interface ThemeContextValue {
   theme: Theme;
   settings: ThemeSettings;
   setPalette: (p: PaletteId) => void;
-  setMode: (m: Mode) => void;
+  setMode: (m: ModePref) => void;
   setFestival: (f: FestivalId) => void;
   setFontId: (f: FontId) => void;
   setFontSize: (s: FontSizeId) => void;
   setDensity: (d: DensityId) => void;
   setPanelMode: (p: PanelMode) => void;
   setReduceMotion: (v: boolean) => void;
+  setSidebar: (v: 'normal' | 'compact') => void;
+  setFontBold: (v: boolean) => void;
+  setLanguage: (v: 'th' | 'en') => void;
   resetAppearance: () => void;
 }
 
@@ -69,20 +85,31 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<ThemeSettings>(DEFAULT_SETTINGS);
+  // 'auto' = อิงเวลาเครื่อง — เช็คทุกนาทีเฉพาะตอนเปิดโหมดนี้ ข้ามเส้น 06:00/18:00 แล้วสลับเอง
+  const [autoDark, setAutoDark] = useState(isNightNow);
+  useEffect(() => {
+    if (settings.mode !== 'auto') return;
+    const check = () => setAutoDark(isNightNow());
+    check();
+    const id = setInterval(check, 60_000);
+    return () => clearInterval(id);
+  }, [settings.mode]);
 
   const theme = useMemo<Theme>(() => {
-    const colors = resolveColors(settings.palette, settings.mode, settings.festival);
-    const isDark = settings.mode === 'dark';
+    const mode: Mode = settings.mode === 'auto' ? (autoDark ? 'dark' : 'light') : settings.mode;
+    const colors = resolveColors(settings.palette, mode, settings.festival);
+    const isDark = mode === 'dark';
     const shadowColor = isDark ? '#000000' : '#0F3D2E';
     return {
       palette: settings.palette,
-      mode: settings.mode,
+      mode,
       isDark,
       festival: settings.festival,
       colors,
-      tones: resolveTones(colors, settings.palette, settings.mode),
-      kpi: resolveKpi(colors, settings.palette, settings.mode),
-      font: (weight: FontWeight = '400') => uiFontFamily(settings.fontId, weight),
+      tones: resolveTones(colors, settings.palette, mode, settings.festival),
+      kpi: resolveKpi(colors, settings.palette, mode, settings.festival),
+      festive: resolveFestive(settings.festival, mode),
+      font: (weight: FontWeight = '400') => uiFontFamily(settings.fontId, settings.fontBold ? BOLD_BUMP[weight] : weight),
       mono: (weight: FontWeight = '400') => monoFontFamily(weight),
       fs: buildFontSizes(settings.fontSize),
       density: DENSITIES[settings.density],
@@ -112,7 +139,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       },
       reduceMotion: settings.reduceMotion,
     };
-  }, [settings]);
+  }, [settings, autoDark]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
@@ -126,6 +153,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setDensity: (density) => setSettings((s) => ({ ...s, density })),
       setPanelMode: (panelMode) => setSettings((s) => ({ ...s, panelMode })),
       setReduceMotion: (reduceMotion) => setSettings((s) => ({ ...s, reduceMotion })),
+      setSidebar: (sidebar) => setSettings((s) => ({ ...s, sidebar })),
+      setFontBold: (fontBold) => setSettings((s) => ({ ...s, fontBold })),
+      setLanguage: (language) => setSettings((s) => ({ ...s, language })),
       resetAppearance: () => setSettings(DEFAULT_SETTINGS),
     }),
     [theme, settings]

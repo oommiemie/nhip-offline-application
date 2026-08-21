@@ -7,7 +7,7 @@ import { AnimatedPressable, AppText, EmptyState, useHoverFade, usePressScale, we
 import { OSS_TABS } from '../state/mockData';
 import { useApp } from '../state/AppContext';
 import type { OssTabId } from '../state/types';
-import { useTheme, withAlpha } from '../theme';
+import { shade, useTheme, withAlpha } from '../theme';
 import { PatientListScreen } from './PatientListScreen';
 import { EncounterScreen } from './EncounterScreen';
 
@@ -153,7 +153,15 @@ export const OssScreen: React.FC = () => {
             setBar((s) => (Math.abs(s.w - w) < 1 && Math.abs(s.h - h) < 1 ? s : { w, h }));
           }}
           // รางพิลพื้นเรียบ — ความมีมิติอยู่ที่ตัวปุ่ม (เกรเดียนต์+เงา) ไม่ใส่เอฟเฟคพื้นหลัง
-          style={[{ borderRadius: t.radius.pill, backgroundColor: c.sidebar, overflow: 'hidden' }, t.shadow.md]}
+          // ธีมเทศกาล: รางใช้เฉดอ่อนของสีหลัก (Christmas = เขียวสน) ไม่ใช้พื้น sidebar ที่เป็นโทนแดง
+          style={[
+            {
+              borderRadius: t.radius.pill,
+              backgroundColor: t.festive ? shade(c.primary, 0.78) : c.sidebar,
+              overflow: 'hidden',
+            },
+            t.shadow.md,
+          ]}
         >
           <ScrollView
             horizontal

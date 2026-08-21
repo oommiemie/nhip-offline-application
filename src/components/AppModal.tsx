@@ -38,7 +38,7 @@ export const AppModal: React.FC<AppModalProps> = ({
           onPress={dismissable ? onClose : undefined}
           style={{
             flex: 1,
-            backgroundColor: withAlpha('#0B2D22', 0.5),
+            backgroundColor: withAlpha(t.festive?.scrimBase ?? '#0B2D22', 0.5),
             alignItems: 'center',
             justifyContent: 'center',
             padding: 20,

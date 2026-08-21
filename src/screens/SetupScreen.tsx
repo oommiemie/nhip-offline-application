@@ -27,7 +27,7 @@ import {
 import type { StepChipItem } from '../components';
 import { FACILITIES } from '../state/mockData';
 import { useApp } from '../state/AppContext';
-import { useTheme, withAlpha } from '../theme';
+import { shade, useTheme, withAlpha } from '../theme';
 import { fmtInt } from '../utils/format';
 
 const stepsFor = (stage: 'sso' | 'pick' | 'import'): StepChipItem[] => [
@@ -157,6 +157,7 @@ const ImportRow: React.FC<{ label: string; file: string; rows: number; size: str
 export const SetupScreen: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
+  const heroBase = t.festival === 'none' ? c.primary : c.secondary;
   const { state, actions } = useApp();
   const { width } = useWindowDimensions();
   const wide = width >= 1000;
@@ -261,7 +262,7 @@ export const SetupScreen: React.FC = () => {
             <AppText size="md" weight="600" color="#FFFFFF">
               ยืนยันตัวตนแล้ว
             </AppText>
-            <AppText size="xs" color="#B7E4C7" mono>
+            <AppText size="xs" color={withAlpha('#FFFFFF', 0.8)} mono>
               {state.ssoUser} · {state.ssoTime}
             </AppText>
           </View>
@@ -301,7 +302,7 @@ export const SetupScreen: React.FC = () => {
             <AppText size="md" weight="600" color="#FFFFFF" numberOfLines={1}>
               ยังไม่ได้ยืนยันตัวตน
             </AppText>
-            <AppText size="xs" color="#B7E4C7" numberOfLines={1}>
+            <AppText size="xs" color={withAlpha('#FFFFFF', 0.8)} numberOfLines={1}>
               เข้าสู่ระบบ MOPH SSO เพื่อดึงข้อมูล
             </AppText>
           </View>
@@ -445,7 +446,12 @@ export const SetupScreen: React.FC = () => {
 
   return (
     // พื้น gradient เดียวกับหน้า auth → ตอนการ์ดขยายออก ฉากหลังต่อเนื่องไม่กระตุก (ตาม Figma เหลือขอบเขียว 8px)
-    <LinearGradient colors={['#2D6A4F', '#40916C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <LinearGradient
+      colors={[shade(heroBase, -0.34), shade(heroBase, -0.12), heroBase]}
+      start={{ x: 0.1, y: 0 }}
+      end={{ x: 0.9, y: 1 }}
+      style={{ flex: 1 }}
+    >
       <View
         style={{ flex: 1, padding: 8, flexDirection: 'row', justifyContent: 'flex-end' }}
         onLayout={(e) => setPaneW(e.nativeEvent.layout.width - 16)}

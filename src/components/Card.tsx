@@ -79,6 +79,8 @@ export const SectionCard: React.FC<SectionCardProps> = ({
           borderBottomColor: t.colors.border,
         }}
       >
+        {/* ธีมเทศกาล: ขีดทองนำหน้าหัวข้อทุก section */}
+        {t.festive ? <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: t.colors.accent }} /> : null}
         <View style={{ flex: 1, gap: 1 }}>
           <AppText size={titleSize} weight="700">
             {title}

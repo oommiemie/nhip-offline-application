@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '../theme';
+import { useTheme, withAlpha } from '../theme';
 import { AppText } from './AppText';
 import { Button } from './Button';
 
@@ -25,12 +25,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon = 'card-outline', t
           width: 52,
           height: 52,
           borderRadius: 14,
-          backgroundColor: c.surface3,
+          // ธีมเทศกาล: กล่องไอคอนโทนทองอุ่นแทนเทา
+          backgroundColor: t.festive ? withAlpha(c.accent, 0.14) : c.surface3,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Ionicons name={icon} size={24} color={c.mutedForeground} />
+        <Ionicons name={icon} size={24} color={t.festive ? c.accentStrong : c.mutedForeground} />
       </View>
       <AppText size="md" weight="600" center>
         {title}
