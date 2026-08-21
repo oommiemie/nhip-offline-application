@@ -7,6 +7,7 @@ import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme';
 import { cidDigits, formatCid, formatPhone, phoneDigits } from '../utils/format';
 import type { VisitRecord } from '../state/types';
+import { useT } from '../i18n';
 
 export interface EditPatientModalProps {
   visible: boolean;
@@ -24,6 +25,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
   const t = useTheme();
   const c = t.colors;
   const { actions } = useApp();
+  const tt = useT();
 
   const [cid, setCid] = useState('');
   const [name, setName] = useState('');
@@ -74,7 +76,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
     <AppModal
       visible={visible}
       onClose={onClose}
-      title="แก้ไขข้อมูลผู้ป่วย"
+      title={tt('แก้ไขข้อมูลผู้ป่วย')}
       titleBadge={
         <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, backgroundColor: c.muted }}>
           <AppText size="xs" weight="600" mono>
@@ -85,9 +87,9 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
       maxWidth={900}
       footer={
         <>
-          <Button label="ยกเลิก" variant="outline" onPress={onClose} />
+          <Button label={tt('ยกเลิก')} variant="outline" onPress={onClose} />
           <Button
-            label="บันทึกการแก้ไข"
+            label={tt('บันทึกการแก้ไข')}
             variant="strong"
             disabled={phoneBad || cidBad || nameBad}
             onPress={() => {
@@ -117,15 +119,15 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: c.primary }} />
             <AppText size="md" weight="700">
-              ข้อมูลผู้ป่วย
+              {tt('ข้อมูลผู้ป่วย')}
             </AppText>
             <AppText size="xs" muted style={{ flex: 1 }}>
-              แก้ไขได้ทุกช่อง — ใช้กรณีอ่านบัตรไม่ได้หรือข้อมูลบนบัตรไม่ตรง
+              {tt('แก้ไขได้ทุกช่อง — ใช้กรณีอ่านบัตรไม่ได้หรือข้อมูลบนบัตรไม่ตรง')}
             </AppText>
           </View>
           <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
             <TextField
-              label="เลขบัตรประชาชน"
+              label={tt('เลขบัตรประชาชน')}
               required
               value={cid}
               onChangeText={(v) => setCid(formatCid(v))}
@@ -134,20 +136,20 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
               inputMode="numeric"
               mono
               maxLength={17}
-              errorText={cidBad ? 'ต้องมี 13 หลัก' : undefined}
+              errorText={cidBad ? tt('ต้องมี 13 หลัก') : undefined}
               containerStyle={{ flex: 1, minWidth: 170 }}
             />
             <TextField
-              label="ชื่อ-นามสกุล"
+              label={tt('ชื่อ-นามสกุล')}
               required
               value={name}
               onChangeText={setName}
-              placeholder="คำนำหน้า ชื่อ นามสกุล"
-              errorText={nameBad ? 'ต้องระบุชื่อ' : undefined}
+              placeholder={tt('คำนำหน้า ชื่อ นามสกุล')}
+              errorText={nameBad ? tt('ต้องระบุชื่อ') : undefined}
               containerStyle={{ flex: 1, minWidth: 170 }}
             />
             <TextField
-              label="เบอร์โทรศัพท์"
+              label={tt('เบอร์โทรศัพท์')}
               value={phone}
               onChangeText={(v) => setPhone(formatPhone(v))}
               placeholder="081-234-5678"
@@ -156,49 +158,49 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
               icon="call-outline"
               mono
               maxLength={12}
-              errorText={phoneBad ? 'ต้องมี 9–10 หลัก' : undefined}
+              errorText={phoneBad ? tt('ต้องมี 9–10 หลัก') : undefined}
               containerStyle={{ flex: 1, minWidth: 170 }}
             />
           </View>
           <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
             <SelectField
-              label="เพศ"
+              label={tt('เพศ')}
               value={sex}
               options={['หญิง', 'ชาย']}
               onChange={(v) => setSex(v as 'ชาย' | 'หญิง')}
               containerStyle={{ flex: 1, minWidth: 104 }}
             />
             <TextField
-              label="วันเกิด"
+              label={tt('วันเกิด')}
               value={dob}
               onChangeText={setDob}
-              placeholder="วว/ดด/ปปปป"
+              placeholder={tt('วว/ดด/ปปปป')}
               mono
               containerStyle={{ flex: 1, minWidth: 104 }}
             />
             <SelectField
-              label="หมู่เลือด"
+              label={tt('หมู่เลือด')}
               value={bloodType}
               options={BLOOD_OPTIONS}
               onChange={setBloodType}
               containerStyle={{ flex: 1, minWidth: 104 }}
             />
             <SelectField
-              label="เชื้อชาติ"
+              label={tt('เชื้อชาติ')}
               value={race}
               options={withCurrent(ETHNICITY_OPTIONS, race)}
               onChange={setRace}
               containerStyle={{ flex: 1, minWidth: 104 }}
             />
             <SelectField
-              label="สัญชาติ"
+              label={tt('สัญชาติ')}
               value={nationality}
               options={withCurrent(ETHNICITY_OPTIONS, nationality)}
               onChange={setNationality}
               containerStyle={{ flex: 1, minWidth: 104 }}
             />
             <SelectField
-              label="ศาสนา"
+              label={tt('ศาสนา')}
               value={religion}
               options={withCurrent(RELIGION_OPTIONS, religion)}
               onChange={setReligion}
@@ -206,10 +208,10 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
             />
           </View>
           <TextField
-            label="ที่อยู่ตามบัตร"
+            label={tt('ที่อยู่ตามบัตร')}
             value={address}
             onChangeText={setAddress}
-            placeholder="บ้านเลขที่ หมู่ ตำบล อำเภอ จังหวัด"
+            placeholder={tt('บ้านเลขที่ หมู่ ตำบล อำเภอ จังหวัด')}
             containerStyle={{ flex: 1 }}
           />
         </View>
@@ -218,12 +220,12 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: c.info }} />
             <AppText size="md" weight="700">
-              ข้อมูลการรับบริการ
+              {tt('ข้อมูลการรับบริการ')}
             </AppText>
           </View>
           <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-            <SelectField label="สิทธิ์การรักษา" required value={right} options={RIGHT_OPTIONS} onChange={setRight} containerStyle={{ flex: 1, minWidth: 200 }} />
-            <SelectField label="ประเภทบริการ" required value={service} options={SERVICE_OPTIONS} onChange={setService} containerStyle={{ flex: 1, minWidth: 200 }} />
+            <SelectField label={tt('สิทธิ์การรักษา')} required value={right} options={RIGHT_OPTIONS} onChange={setRight} containerStyle={{ flex: 1, minWidth: 200 }} />
+            <SelectField label={tt('ประเภทบริการ')} required value={service} options={SERVICE_OPTIONS} onChange={setService} containerStyle={{ flex: 1, minWidth: 200 }} />
           </View>
           <View style={{ gap: 6 }}>
             <AppText size="sm" weight="600">
@@ -233,8 +235,8 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
               <View style={{ flex: 1, minWidth: 190, flexDirection: 'row', gap: 8 }}>
                 {(
                   [
-                    ['deny', 'ปฏิเสธการแพ้ยา'],
-                    ['has', 'มีประวัติแพ้ยา'],
+                    ['deny', tt('ปฏิเสธการแพ้ยา')],
+                    ['has', tt('มีประวัติแพ้ยา')],
                   ] as Array<['deny' | 'has', string]>
                 ).map(([mode, label]) => {
                   const on = allergyMode === mode;
@@ -264,7 +266,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({ visible, rec
               <TextField
                 value={allergyDrug}
                 onChangeText={setAllergyDrug}
-                placeholder="ระบุชื่อยา"
+                placeholder={tt('ระบุชื่อยา')}
                 editable={allergyMode === 'has'}
                 containerStyle={{ flex: 1, minWidth: 190, opacity: allergyMode === 'has' ? 1 : 0.5 }}
               />

@@ -19,6 +19,7 @@ import { EditPatientModal } from '../modals/EditPatientModal';
 import { useApp } from '../state/AppContext';
 import { useTheme, withAlpha } from '../theme';
 import { initials } from '../utils/format';
+import { useT } from '../i18n';
 
 /** ช่องในกล่องค่าตรวจไม่วาด outline ของตัวเอง — สถานะโฟกัสแสดงที่ขอบกล่องนอกแทน */
 const NO_INNER_OUTLINE =
@@ -164,6 +165,7 @@ export const EncounterScreen: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions, derived } = useApp();
+  const tt = useT();
   const { width } = useWindowDimensions();
   const wide = width >= 1180;
   const cur = derived.current;
@@ -226,9 +228,9 @@ export const EncounterScreen: React.FC = () => {
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <EmptyState
           icon="card-outline"
-          title="ยังไม่มีคนไข้ในโฟกัสงานนี้"
-          subtitle="เลือกจากรายการรับบริการ หรืออ่านบัตรประชาชนเพื่อเปิดคิวใหม่"
-          actionLabel="อ่านบัตรประชาชน · ลงทะเบียน"
+          title={tt('ยังไม่มีคนไข้ในโฟกัสงานนี้')}
+          subtitle={tt('เลือกจากรายการรับบริการ หรืออ่านบัตรประชาชนเพื่อเปิดคิวใหม่')}
+          actionLabel={tt('อ่านบัตรประชาชน · ลงทะเบียน')}
           onAction={actions.openReg}
         />
       </View>
@@ -244,21 +246,21 @@ export const EncounterScreen: React.FC = () => {
             <Card rounded="xl" padded={16} shadow="md" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Button
-                  label="ประวัติเดิม"
+                  label={tt('ประวัติเดิม')}
                   variant="outline"
                   size="sm"
                   onPress={() => actions.setHistoryOpen(true)}
                   style={{ paddingHorizontal: 14 }}
                 />
                 <View style={{ flex: 1 }} />
-                <Tooltip label={expanded ? 'ย่อข้อมูล' : 'ดูข้อมูลเพิ่มเติม'}>
+                <Tooltip label={expanded ? tt('ย่อข้อมูล') : tt('ดูข้อมูลเพิ่มเติม')}>
                   <IconBtn
                     name={expanded ? 'contract-outline' : 'expand-outline'}
                     size={32}
                     onPress={() => setExpanded((v) => !v)}
                   />
                 </Tooltip>
-                <Tooltip label="แก้ไขข้อมูลผู้ป่วย">
+                <Tooltip label={tt('แก้ไขข้อมูลผู้ป่วย')}>
                   <IconBtn name="pencil" size={32} onPress={() => setEditOpen(true)} />
                 </Tooltip>
               </View>
@@ -270,8 +272,8 @@ export const EncounterScreen: React.FC = () => {
                 </AppText>
                 <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                   <MintChip label={`HN ${cur.hn}`} mono />
-                  <MintChip label={cur.right} />
-                  <MintChip label={cur.service} />
+                  <MintChip label={tt(cur.right)} />
+                  <MintChip label={tt(cur.service)} />
                 </View>
               </View>
 
@@ -280,7 +282,7 @@ export const EncounterScreen: React.FC = () => {
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <View style={{ flex: 1, gap: 2 }}>
                   <AppText size="xs" muted>
-                    เลขบัตรประชาชน
+                    {tt('เลขบัตรประชาชน')}
                   </AppText>
                   <AppText size="sm" weight="600" mono numberOfLines={1}>
                     {cur.cid}
@@ -288,7 +290,7 @@ export const EncounterScreen: React.FC = () => {
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
                   <AppText size="xs" muted>
-                    เบอร์โทรศัพท์
+                    {tt('เบอร์โทรศัพท์')}
                   </AppText>
                   <AppText size="sm" weight="600" mono numberOfLines={1}>
                     {cur.phone || '—'}
@@ -297,38 +299,38 @@ export const EncounterScreen: React.FC = () => {
               </View>
 
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-                <MiniTile label="เพศ" value={cur.sex} />
-                <MiniTile label="อายุ" value={`${cur.age} ปี`} />
-                <MiniTile label="หมู่เลือด" value={cur.bloodType} />
+                <MiniTile label={tt('เพศ')} value={tt(cur.sex)} />
+                <MiniTile label={tt('อายุ')} value={tt('{n} ปี', { n: cur.age })} />
+                <MiniTile label={tt('หมู่เลือด')} value={tt(cur.bloodType)} />
               </View>
 
               {expanded ? (
                 <>
                   <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-                    <MiniTile label="สัญชาติ" value={cur.nationality} />
-                    <MiniTile label="เชื้อชาติ" value={cur.race} />
-                    <MiniTile label="ศาสนา" value={cur.religion} />
+                    <MiniTile label={tt('สัญชาติ')} value={tt(cur.nationality)} />
+                    <MiniTile label={tt('เชื้อชาติ')} value={tt(cur.race)} />
+                    <MiniTile label={tt('ศาสนา')} value={tt(cur.religion)} />
                   </View>
                   <View style={{ marginTop: 10 }}>
-                    <MiniTile label="ที่อยู่" value={cur.address} />
+                    <MiniTile label={tt('ที่อยู่')} value={cur.address} />
                   </View>
                 </>
               ) : null}
             </Card>
 
-            <BarCard title="แพ้ยา" danger={!!cur.allergy}>
+            <BarCard title={tt('แพ้ยา')} danger={!!cur.allergy}>
               <AppText size="sm" weight="600" color={cur.allergy ? c.alertBandForeground : c.mutedForeground}>
-                {cur.allergy || 'ไม่พบประวัติแพ้ยา — สอบถามซ้ำทุกครั้ง'}
+                {cur.allergy || tt('ไม่พบประวัติแพ้ยา — สอบถามซ้ำทุกครั้ง')}
               </AppText>
             </BarCard>
 
-            <BarCard title="โรคประจำตัว">
+            <BarCard title={tt('โรคประจำตัว')}>
               <AppText size="sm" weight="600">
-                {cur.chronic && cur.chronic !== '—' ? cur.chronic : 'ไม่มีโรคประจำตัวในระบบ'}
+                {cur.chronic && cur.chronic !== '—' ? cur.chronic : tt('ไม่มีโรคประจำตัวในระบบ')}
               </AppText>
             </BarCard>
 
-            <BarCard title="ยาที่ใช้อยู่">
+            <BarCard title={tt('ยาที่ใช้อยู่')}>
               {cur.drugs.length ? (
                 <View style={{ gap: 6 }}>
                   {cur.drugs.map((d) => (
@@ -339,7 +341,7 @@ export const EncounterScreen: React.FC = () => {
                 </View>
               ) : (
                 <AppText size="sm" muted>
-                  ไม่มีรายการยาเดิมในเครื่อง · ดึงจาก Cloud เมื่อออนไลน์
+                  {tt('ไม่มีรายการยาเดิมในเครื่อง · ดึงจาก Cloud เมื่อออนไลน์')}
                 </AppText>
               )}
             </BarCard>
@@ -347,9 +349,9 @@ export const EncounterScreen: React.FC = () => {
 
           {/* คอลัมน์ขวา — ฟอร์มบันทึกการตรวจ */}
           <View style={{ flex: 1, gap: 16 }}>
-            <InfoCard title="สัญญาณชีพ" icon="clipboard-pulse-outline" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
+            <InfoCard title={tt('สัญญาณชีพ')} icon="clipboard-pulse-outline" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-                <VitalField label="ความดันโลหิต (mmHg)" unit="" value="" bad={bpHigh} focused={bpFocus}>
+                <VitalField label={tt('ความดันโลหิต (mmHg)')} unit="" value="" bad={bpHigh} focused={bpFocus}>
                   <TextInput
                     value={sys}
                     onChangeText={setSys}
@@ -396,43 +398,43 @@ export const EncounterScreen: React.FC = () => {
                     ]}
                   />
                 </VitalField>
-                <VitalField label="ชีพจร" unit="นาที" value={pulse} onChangeText={setPulse} />
-                <VitalField label="หายใจ" unit="นาที" value={resp} onChangeText={setResp} />
-                <VitalField label="อุณหภูมิ" unit="°C" value={temp} onChangeText={setTemp} bad={tempHigh} />
+                <VitalField label={tt('ชีพจร')} unit={tt('นาที')} value={pulse} onChangeText={setPulse} />
+                <VitalField label={tt('หายใจ')} unit={tt('นาที')} value={resp} onChangeText={setResp} />
+                <VitalField label={tt('อุณหภูมิ')} unit="°C" value={temp} onChangeText={setTemp} bad={tempHigh} />
                 <VitalField label="SpO₂" unit="%" value={spo2} onChangeText={setSpo2} bad={spo2Low} />
               </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-                <VitalField label="น้ำหนัก" unit="กก." value={weight} onChangeText={setWeight} />
-                <VitalField label="ส่วนสูง" unit="ซม." value={height} onChangeText={setHeight} />
+                <VitalField label={tt('น้ำหนัก')} unit={tt('กก.')} value={weight} onChangeText={setWeight} />
+                <VitalField label={tt('ส่วนสูง')} unit={tt('ซม.')} value={height} onChangeText={setHeight} />
                 <VitalField label="BMI" unit="kg/m²" value={bmi} readonly />
-                <VitalField label="รอบเอว" unit="ซม." value={waist} onChangeText={setWaist} />
+                <VitalField label={tt('รอบเอว')} unit={tt('ซม.')} value={waist} onChangeText={setWaist} />
                 <VitalField label="DTX" unit="mg/dL" value={dtx} onChangeText={setDtx} bad={dtxHigh} />
               </View>
             </InfoCard>
 
-            <InfoCard title="ซักประวัติ / ตรวจร่างกาย" icon="clipboard-text-outline" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
+            <InfoCard title={tt('ซักประวัติ / ตรวจร่างกาย')} icon="clipboard-text-outline" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
               <View style={{ gap: 12 }}>
-                <TextField label="อาการสำคัญ (CC)" required value={cc} onChangeText={setCc} placeholder="พิมพ์อาการสำคัญ" />
-                <TextField label="ประวัติปัจจุบัน (HPI)" value={hpi} onChangeText={setHpi} placeholder="พิมพ์ประวัติปัจจุบัน" />
-                <TextField label="ตรวจร่างกาย (PE)" value={pe} onChangeText={setPe} placeholder="ผลการตรวจร่างกาย" />
+                <TextField label={tt('อาการสำคัญ (CC)')} required value={cc} onChangeText={setCc} placeholder={tt('พิมพ์อาการสำคัญ')} />
+                <TextField label={tt('ประวัติปัจจุบัน (HPI)')} value={hpi} onChangeText={setHpi} placeholder={tt('พิมพ์ประวัติปัจจุบัน')} />
+                <TextField label={tt('ตรวจร่างกาย (PE)')} value={pe} onChangeText={setPe} placeholder={tt('ผลการตรวจร่างกาย')} />
               </View>
             </InfoCard>
 
-            <InfoCard title="แผนการรักษา / คำแนะนำ" icon="clipboard-check-outline" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
+            <InfoCard title={tt('แผนการรักษา / คำแนะนำ')} icon="clipboard-check-outline" style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}>
               <TextField
                 value={plan}
                 onChangeText={setPlan}
-                placeholder="สรุปแผนการรักษา คำแนะนำที่ให้ผู้ป่วย และการนัดครั้งถัดไป"
+                placeholder={tt('สรุปแผนการรักษา คำแนะนำที่ให้ผู้ป่วย และการนัดครั้งถัดไป')}
               />
             </InfoCard>
 
             <InfoCard
-              title="การวินิจฉัย (ICD-10)"
+              title={tt('การวินิจฉัย (ICD-10)')}
               icon="stethoscope"
               style={[{ borderWidth: 0, borderRadius: t.radius.xl }, t.shadow.md]}
               right={
                 <Button
-                  label="เพิ่ม"
+                  label={tt('เพิ่ม')}
                   variant="outline"
                   size="sm"
                   icon={<Ionicons name="add" size={15} color={c.primary} />}
@@ -460,19 +462,19 @@ export const EncounterScreen: React.FC = () => {
                       <AppText size="sm" weight="600" style={{ flex: 1 }} numberOfLines={1}>
                         {name}
                       </AppText>
-                      <Badge label={kind} tone={kind === 'หลัก' ? 'primary' : 'neutral'} size="sm" />
-                      <Tooltip label="ลบ">
+                      <Badge label={tt(kind)} tone={kind === 'หลัก' ? 'primary' : 'neutral'} size="sm" />
+                      <Tooltip label={tt('ลบ')}>
                         <IconBtn
                           name="trash-outline"
                           size={30}
                           onPress={() =>
                             actions.showAlert({
                               kind: 'delete',
-                              title: 'ลบการวินิจฉัยนี้?',
+                              title: tt('ลบการวินิจฉัยนี้?'),
                               message: name,
                               detail: `${code} · ${kind}`,
-                              cancelLabel: 'ยกเลิก',
-                              confirmLabel: 'ลบ',
+                              cancelLabel: tt('ยกเลิก'),
+                              confirmLabel: tt('ลบ'),
                               onConfirm: () => {
                                 if (state.curIdx !== null) actions.removeIcd(state.curIdx, code);
                               },
@@ -485,7 +487,7 @@ export const EncounterScreen: React.FC = () => {
                 </View>
               ) : (
                 <AppText size="sm" muted center style={{ paddingVertical: 10 }}>
-                  ยังไม่มีการวินิจฉัย — กด “เพิ่ม” เพื่อค้นรหัส ICD-10
+                  {tt('ยังไม่มีการวินิจฉัย — กด “เพิ่ม” เพื่อค้นรหัส ICD-10')}
                 </AppText>
               )}
             </InfoCard>
@@ -543,13 +545,13 @@ export const EncounterScreen: React.FC = () => {
           >
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c.mutedForeground }} />
             <AppText size="xs" weight="600" muted numberOfLines={1} style={{ flexShrink: 1 }}>
-              ร่างแบบบันทึกถูกเก็บในเครื่องอัตโนมัติ — ยังไม่ส่งขึ้น Cloud จนกว่าจะซิงค์
+              {tt('ร่างแบบบันทึกถูกเก็บในเครื่องอัตโนมัติ — ยังไม่ส่งขึ้น Cloud จนกว่าจะซิงค์')}
             </AppText>
           </View>
           <View style={{ flex: 1 }} />
           {/* ปุ่มคู่ท้ายบาร์กว้างเท่ากัน 100 ตาม Figma (btn 100x47) */}
-          <Button label="ยกเลิก" variant="outline" onPress={() => actions.setOssTab('list')} style={{ width: 100 }} />
-          <Button label="บันทึก" onPress={actions.saveEncounter} style={{ width: 100 }} />
+          <Button label={tt('ยกเลิก')} variant="outline" onPress={() => actions.setOssTab('list')} style={{ width: 100 }} />
+          <Button label={tt('บันทึก')} onPress={actions.saveEncounter} style={{ width: 100 }} />
         </View>
       </View>
     </View>

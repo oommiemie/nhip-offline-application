@@ -9,6 +9,7 @@ import { AmbientBackground, AnimatedPressable, AppText, StatusDot, Tooltip, useH
 import { NAV, type NavDef } from './navItems';
 import { Spotlight } from '../modals/Spotlight';
 import { NoticeBell } from '../modals/NoticePanel';
+import { useT } from '../i18n';
 
 /** โลโก้ NHIP — วงกลมเขียวเข้ม + ตัว N (Figma 16:859 · Frame 7 · 48px #1B4332) */
 export const NhipMark: React.FC<{ size?: number }> = ({ size = 48 }) => {
@@ -43,6 +44,7 @@ const NavItem: React.FC<{ def: NavDef; active: boolean; compact: boolean; badge?
   onPress,
 }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   /*
    * เมนูที่ไม่ได้เลือก = ไม่มีพื้นปุ่ม (โปร่งใสบนพื้นมิ้นต์) มีแค่ตอนชี้เมาส์เป็นไฮไลต์จาง ๆ ที่ค่อย ๆ ไล่เข้ามา
@@ -112,7 +114,7 @@ const NavItem: React.FC<{ def: NavDef; active: boolean; compact: boolean; badge?
               ]}
             >
               <AppText size="sm" weight="600" color={t.isDark ? '#0B2D22' : '#E7F8EC'} numberOfLines={1} style={{ maxWidth: 200 }}>
-                {def.label}
+                {tt(def.label)}
               </AppText>
               {badge ? (
                 <AppText size="xs" weight="700" mono color={t.isDark ? '#0B2D22' : '#FBD38D'}>
@@ -125,7 +127,7 @@ const NavItem: React.FC<{ def: NavDef; active: boolean; compact: boolean; badge?
       ) : null}
       {compact ? null : (
         <AppText size="base" weight={active ? '600' : '500'} color={fg} style={{ flex: 1 }}>
-          {def.label}
+          {tt(def.label)}
         </AppText>
       )}
       {!compact && badge ? (
@@ -153,12 +155,13 @@ const NavItem: React.FC<{ def: NavDef; active: boolean; compact: boolean; badge?
 const UserCard: React.FC<{ compact: boolean }> = ({ compact }) => {
   const t = useTheme();
   const { state, actions, derived } = useApp();
+  const tt = useT();
   if (compact) {
     return (
-      <Tooltip label="ออกจากระบบ" position="top" style={{ alignSelf: 'center' }}>
+      <Tooltip label={tt('ออกจากระบบ')} position="top" style={{ alignSelf: 'center' }}>
         <Pressable
           onPress={actions.logout}
-          accessibilityLabel="ออกจากระบบ"
+          accessibilityLabel={tt('ออกจากระบบ')}
           style={{
             width: 44,
             height: 44,
@@ -190,7 +193,7 @@ const UserCard: React.FC<{ compact: boolean }> = ({ compact }) => {
         style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}
       >
         <AppText size="md" weight="700" color={t.colors.primaryStrong}>
-          สม
+          {tt('สม')}
         </AppText>
       </View>
       <View style={{ flex: 1, gap: 2 }}>
@@ -201,10 +204,10 @@ const UserCard: React.FC<{ compact: boolean }> = ({ compact }) => {
           {derived.branchLabel}
         </AppText>
       </View>
-      <Tooltip label="ออกจากระบบ" position="top">
+      <Tooltip label={tt('ออกจากระบบ')} position="top">
         <Pressable
           onPress={actions.logout}
-          accessibilityLabel="ออกจากระบบ"
+          accessibilityLabel={tt('ออกจากระบบ')}
           style={{
             width: 32,
             height: 32,
@@ -224,6 +227,7 @@ const UserCard: React.FC<{ compact: boolean }> = ({ compact }) => {
 /** แถบบนของพื้นที่เนื้อหา: ค้นหา + สถานะออฟไลน์ + กระดิ่ง */
 export const TopBar: React.FC<{ showLogo?: boolean; onSearch?: () => void }> = ({ showLogo = false, onSearch }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   const { state, derived } = useApp();
   const { width } = useWindowDimensions();
@@ -255,7 +259,7 @@ export const TopBar: React.FC<{ showLogo?: boolean; onSearch?: () => void }> = (
       >
         <Ionicons name="search" size={17} color={c.mutedForeground} />
         <AppText size="sm" muted numberOfLines={1} style={{ flex: 1 }}>
-          ค้นหาผู้ป่วย...
+          {tt('ค้นหาผู้ป่วย...')}
         </AppText>
         {/* คีย์ลัดเปิด Spotlight */}
         {Platform.OS === 'web' && width >= 900 ? (
@@ -291,8 +295,8 @@ export const TopBar: React.FC<{ showLogo?: boolean; onSearch?: () => void }> = (
           <StatusDot color={c.mutedForeground} size={8} />
           <AppText size="sm" weight="600" muted numberOfLines={1}>
             {compactInfo
-              ? `ออฟไลน์ · รอซิงค์ ${derived.pendingCount}`
-              : `ออฟไลน์ · รอซิงค์ ${derived.pendingCount} รายการ · ซิงค์ล่าสุด ${state.lastSync}`}
+              ? tt('ออฟไลน์ · รอซิงค์ {n}', { n: derived.pendingCount })
+              : tt('ออฟไลน์ · รอซิงค์ {n} รายการ · ซิงค์ล่าสุด {time}', { n: derived.pendingCount, time: state.lastSync })}
           </AppText>
         </View>
         <View style={{ width: 1, height: 40, backgroundColor: c.border }} />
@@ -337,6 +341,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   // ตัวอักษรบน sidebar — โหมดมืดใช้สีตัวอักษรหลัก (secondary เป็นสีเข้ม อ่านไม่ออกบนพื้นเข้ม)
   const sidebarInk = t.isDark ? c.foreground : c.secondary;
+  const tt = useT();
   // Figma 16:859 · Frame 21 — 250 กว้าง · โปร่งใสบนพื้นมิ้นต์ · pad16
   const sidebar = layout !== 'phone' && (
     <View
@@ -380,7 +385,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 color={withAlpha(sidebarInk, 0.62)}
                 style={{ letterSpacing: 0.8, paddingHorizontal: 4, marginBottom: 2 }}
               >
-                {section.toUpperCase()}
+                {tt(section).toUpperCase()}
               </AppText>
             )}
             {NAV.filter((n) => n.section === section).map((n) => (
@@ -433,7 +438,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <Ionicons name={n.icon} size={19} color={active ? (t.isDark ? c.primary : c.secondary) : c.mutedForeground} />
             </View>
             <AppText size={10} weight={active ? '600' : '400'} color={active ? (t.isDark ? c.primary : c.secondary) : c.mutedForeground}>
-              {n.label === 'One Stop Service' ? 'บริการ OSS' : n.label}
+              {n.label === 'One Stop Service' ? tt('บริการ OSS') : tt(n.label)}
             </AppText>
           </Pressable>
         );

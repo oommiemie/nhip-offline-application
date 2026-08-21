@@ -4,11 +4,13 @@ import { View } from 'react-native';
 import { AppModal, AppText, Button, TextField } from '../components';
 import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme';
+import { useT } from '../i18n';
 
 /** Modal แก้ไขรายการที่ซิงค์ไม่ผ่าน แล้วอัปโหลดใหม่ */
 export const EditRecordModal: React.FC = () => {
   const t = useTheme();
   const { state, actions } = useApp();
+  const tt = useT();
   const idx = state.editingIdx;
   const rec = idx !== null ? state.records[idx] : null;
   const [value, setValue] = useState('');
@@ -23,7 +25,7 @@ export const EditRecordModal: React.FC = () => {
     <AppModal
       visible
       onClose={actions.closeEdit}
-      title="แก้ไขรายการที่ซิงค์ไม่ผ่าน"
+      title={tt('แก้ไขรายการที่ซิงค์ไม่ผ่าน')}
       titleBadge={
         <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, backgroundColor: t.colors.muted }}>
           <AppText size="xs" weight="600" mono>
@@ -34,8 +36,8 @@ export const EditRecordModal: React.FC = () => {
       maxWidth={560}
       footer={
         <>
-          <Button label="ยกเลิก" variant="outline" onPress={actions.closeEdit} />
-          <Button label="บันทึกและอัปโหลดใหม่" onPress={() => actions.resubmit(idx, value)} />
+          <Button label={tt('ยกเลิก')} variant="outline" onPress={actions.closeEdit} />
+          <Button label={tt('บันทึกและอัปโหลดใหม่')} onPress={() => actions.resubmit(idx, value)} />
         </>
       }
     >
@@ -59,8 +61,8 @@ export const EditRecordModal: React.FC = () => {
           </AppText>
         </View>
         <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-          <TextField label="ชื่อ-นามสกุล" value={rec.name} readonly containerStyle={{ flex: 1.3, minWidth: 180 }} />
-          <TextField label="รายการบริการ" value={rec.service} readonly containerStyle={{ flex: 1, minWidth: 140 }} />
+          <TextField label={tt('ชื่อ-นามสกุล')} value={rec.name} readonly containerStyle={{ flex: 1.3, minWidth: 180 }} />
+          <TextField label={tt('รายการบริการ')} value={rec.service} readonly containerStyle={{ flex: 1, minWidth: 140 }} />
         </View>
         <TextField
           label={rec.errorField}

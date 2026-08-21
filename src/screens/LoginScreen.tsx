@@ -7,6 +7,7 @@ import { BRANCHES } from '../state/mockData';
 import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme';
 import { AuthCardIn } from './BrandPanel';
+import { useT } from '../i18n';
 
 /**
  * การ์ดเข้าสู่ระบบ (Figma node 15:6) — เนื้อหาฝั่งขวาเท่านั้น
@@ -17,6 +18,7 @@ export const LoginCard: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions } = useApp();
+  const tt = useT();
   const { width } = useWindowDimensions();
   const cardPad = width >= 1100 ? 64 : 24;
 
@@ -38,14 +40,14 @@ export const LoginCard: React.FC = () => {
      ขอบแดง + ข้อความใต้ช่อง จะขึ้นเมื่อผู้ใช้เข้าไปแล้วออกจากช่องโดยยังว่าง (touched)
      ส่วนปุ่มจะกดไม่ได้ตราบใดที่ยังกรอกไม่ครบ */
   const [touched, setTouched] = useState<{ username?: boolean; password?: boolean }>({});
-  const usernameError = touched.username && !username.trim() ? 'กรุณากรอกชื่อผู้ใช้งาน' : undefined;
-  const passwordError = touched.password && !password.trim() ? 'กรุณากรอกรหัสผ่าน' : undefined;
+  const usernameError = touched.username && !username.trim() ? tt('กรุณากรอกชื่อผู้ใช้งาน') : undefined;
+  const passwordError = touched.password && !password.trim() ? tt('กรุณากรอกรหัสผ่าน') : undefined;
 
   const missing = [
-    !username.trim() ? 'ชื่อผู้ใช้งาน' : null,
-    !password.trim() ? 'รหัสผ่าน' : null,
-    !branch ? 'สาขาบริการ' : null,
-    !room ? 'ห้องตรวจโรค' : null,
+    !username.trim() ? tt('ชื่อผู้ใช้งาน') : null,
+    !password.trim() ? tt('รหัสผ่าน') : null,
+    !branch ? tt('สาขาบริการ') : null,
+    !room ? tt('ห้องตรวจโรค') : null,
   ].filter((x): x is string => x !== null);
   const canSubmit = missing.length === 0;
 
@@ -95,7 +97,7 @@ export const LoginCard: React.FC = () => {
               >
                 <StatusDot color={c.warning} size={8} />
                 <AppText size="sm" weight="600" color={t.tones.warning.fg}>
-                  ยังไม่ได้ตั้งค่าสถานพยาบาล
+                  {tt('ยังไม่ได้ตั้งค่าสถานพยาบาล')}
                 </AppText>
               </View>
             )}
@@ -103,7 +105,7 @@ export const LoginCard: React.FC = () => {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <StatusDot color={c.warning} size={8} />
               <AppText size="sm" muted>
-                ซิงค์ล่าสุด {state.lastSync} น.
+                {tt('ซิงค์ล่าสุด {time} น.', { time: state.lastSync })}
               </AppText>
             </View>
           </View>
@@ -112,47 +114,47 @@ export const LoginCard: React.FC = () => {
           <View style={{ flex: 1, justifyContent: 'center', maxWidth: 472, width: '100%', alignSelf: 'center', gap: 32, paddingVertical: 30 }}>
             <View style={{ gap: 12 }}>
               <AppText size="hero" weight="700" style={{ lineHeight: t.fs.hero * 1.25 }}>
-                เข้าสู่ระบบ
+                {tt('เข้าสู่ระบบ')}
               </AppText>
               <AppText size="md" muted>
-                ลงชื่อเข้าใช้งานด้วยระบบสารสนเทศ รพ.สต. ยุคใหม่
+                {tt('ลงชื่อเข้าใช้งานด้วยระบบสารสนเทศ รพ.สต. ยุคใหม่')}
               </AppText>
             </View>
 
             <View style={{ gap: 20 }}>
               <TextField
-                label="ชื่อผู้ใช้งาน"
+                label={tt('ชื่อผู้ใช้งาน')}
                 icon="person-circle-outline"
                 value={username}
                 onChangeText={setUsername}
                 onBlur={() => setTouched((s) => ({ ...s, username: true }))}
                 errorText={usernameError}
-                placeholder="กรอกชื่อผู้ใช้งาน"
+                placeholder={tt('กรอกชื่อผู้ใช้งาน')}
                 autoCapitalize="none"
                 returnKeyType="next"
               />
               <TextField
-                label="รหัสผ่าน"
+                label={tt('รหัสผ่าน')}
                 icon="lock-closed-outline"
                 value={password}
                 onChangeText={setPassword}
                 onBlur={() => setTouched((s) => ({ ...s, password: true }))}
                 errorText={passwordError}
-                placeholder="กรอกรหัสผ่าน"
+                placeholder={tt('กรอกรหัสผ่าน')}
                 secureTextEntry
                 returnKeyType="go"
                 onSubmitEditing={submit}
               />
               <View style={{ flexDirection: 'row', gap: 16 }}>
                 <SelectField
-                  label="สาขาบริการ"
+                  label={tt('สาขาบริการ')}
                   value={branch}
                   options={BRANCHES.map((b) => ({ value: b.code, label: b.name }))}
                   onChange={onBranchChange}
                   containerStyle={{ flex: 1 }}
                 />
                 <SelectField
-                  label="ห้องตรวจโรค"
+                  label={tt('ห้องตรวจโรค')}
                   value={room}
                   options={branchDef.rooms}
                   onChange={setRoom}
@@ -165,7 +167,7 @@ export const LoginCard: React.FC = () => {
               {/* ธีม Christmas: หิมะเกาะสันปุ่ม และสะบัดร่วงทุกครั้งที่กด */}
               <View style={{ position: 'relative' }}>
                 <Button
-                  label="เข้าสู่ระบบบริการ"
+                  label={tt('เข้าสู่ระบบบริการ')}
                   variant="strong"
                   rounded="md"
                   size="lg"
@@ -181,7 +183,7 @@ export const LoginCard: React.FC = () => {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center' }}>
                     <Ionicons name="information-circle-outline" size={14} color={c.mutedForeground} />
                     <AppText size="xs" muted>
-                      กรอก {missing.join(' · ')} ให้ครบก่อนเข้าสู่ระบบ
+                      {tt('กรอก {fields} ให้ครบก่อนเข้าสู่ระบบ', { fields: missing.join(' · ') })}
                     </AppText>
                   </View>
                 )}
@@ -193,12 +195,12 @@ export const LoginCard: React.FC = () => {
           <View style={{ alignItems: 'center', gap: 12 }}>
             <Pressable onPress={actions.openSetup} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <AppText size="sm" weight="600" color={c.primaryStrong}>
-                ตั้งค่าสถานพยาบาลครั้งแรก
+                {tt('ตั้งค่าสถานพยาบาลครั้งแรก')}
               </AppText>
               <Ionicons name="arrow-forward" size={14} color={c.primaryStrong} />
             </Pressable>
             <AppText size="xs" muted center>
-              หากลืมรหัสผ่าน กรุณาติดต่อผู้ดูแลระบบเครือข่ายจังหวัด
+              {tt('หากลืมรหัสผ่าน กรุณาติดต่อผู้ดูแลระบบเครือข่ายจังหวัด')}
             </AppText>
           </View>
         </ScrollView>

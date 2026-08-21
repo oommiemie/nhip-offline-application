@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { AnimatedPressable, usePressScale, webFocusRing } from './usePressScale';
+import { useT } from '../i18n';
 
 const ROW_H = 34;
 
@@ -92,6 +93,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   style,
 }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   const { width: winW, height: winH } = useWindowDimensions();
   const items = pagesFor(page, Math.max(1, totalPages));
@@ -128,7 +130,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       {pageSize ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <AppText size="sm" muted>
-            แสดง
+            {tt('แสดง')}
           </AppText>
           <Pressable
             ref={sizeRef}
@@ -158,7 +160,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             </View>
           </Pressable>
           <AppText size="sm" muted>
-            รายการ
+            {tt('รายการ')}
           </AppText>
         </View>
       ) : null}

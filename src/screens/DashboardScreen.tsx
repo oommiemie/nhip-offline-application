@@ -21,6 +21,7 @@ import { useApp } from '../state/AppContext';
 import type { VisitRecord } from '../state/types';
 import { useTheme, withAlpha } from '../theme';
 import { greeting, thaiToday } from '../utils/format';
+import { useT } from '../i18n';
 
 /** เขียวมิ้นต์ของ Figma — ใช้เป็นตัวหนังสือรองบนพื้นเขียวเข้ม และพื้น avatar */
 const MINT = '#B7E4C7';
@@ -31,16 +32,17 @@ const FESTIVE_INK = '#F1E4C5';
 const ShiftSummary: React.FC = () => {
   const t = useTheme();
   const { state, derived } = useApp();
+  const tt = useT();
   const rows: Array<{ label: string; value: string; color?: string }> = [
-    { label: 'ลงทะเบียนสะสม', value: `${state.records.length} ราย` },
-    { label: 'รอซิงค์คลาวด์', value: `${derived.pendingCount} ราย`, color: t.festive ? t.festive.goldLight : '#F59E0B' },
-    { label: 'ซิงค์ผ่านแล้ว', value: `${derived.passCount} ราย` },
-    { label: 'ไม่ผ่าน · ต้องแก้ไข', value: `${derived.failCount} ราย`, color: t.festive ? t.colors.terminalErr : '#FF3B30' },
+    { label: tt('ลงทะเบียนสะสม'), value: tt('{n} ราย', { n: state.records.length }) },
+    { label: tt('รอซิงค์คลาวด์'), value: tt('{n} ราย', { n: derived.pendingCount }), color: t.festive ? t.festive.goldLight : '#F59E0B' },
+    { label: tt('ซิงค์ผ่านแล้ว'), value: tt('{n} ราย', { n: derived.passCount }) },
+    { label: tt('ไม่ผ่าน · ต้องแก้ไข'), value: tt('{n} ราย', { n: derived.failCount }), color: t.festive ? t.colors.terminalErr : '#FF3B30' },
   ];
   return (
     <View style={[{ borderRadius: t.radius.xl, backgroundColor: t.colors.terminalBg, padding: 16, gap: 16 }, t.shadow.md]}>
       <AppText size="md" weight="700" color="#FFFFFF">
-        สรุปงานกะปัจจุบัน
+        {tt('สรุปงานกะปัจจุบัน')}
       </AppText>
       <View style={{ gap: 12 }}>
         {rows.map((r) => (
@@ -61,16 +63,17 @@ const ShiftSummary: React.FC = () => {
 /** สถานะห้องปฏิบัติงาน (Figma 16:859 · Frame 33 + user-badge-card) */
 const RoomStatus: React.FC = () => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   return (
     <View style={[{ borderRadius: t.radius.xl, backgroundColor: c.card, padding: 16, gap: 4 }, t.shadow.md]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         {t.festive ? <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: t.colors.accent }} /> : null}
         <AppText size="md" weight="700" style={{ flex: 1 }}>
-          สถานะห้องปฏิบัติงาน
+          {tt('สถานะห้องปฏิบัติงาน')}
         </AppText>
         <AppText size="xs" muted mono>
-          {DOCTORS.filter((d) => d.status === 'busy').length}/{DOCTORS.length} ห้อง
+          {DOCTORS.filter((d) => d.status === 'busy').length}/{DOCTORS.length} {tt('ห้อง')}
         </AppText>
       </View>
       {/* 16 ห้องยาวเกินกว่าจะโชว์หมด — เลื่อนในการ์ด ไม่ดันการ์ดสรุปกะลงไปไกล */}
@@ -113,7 +116,7 @@ const RoomStatus: React.FC = () => {
                   ·
                 </AppText>
                 <AppText size="xs" muted numberOfLines={1}>
-                  {d.roomLabel}
+                  {tt(d.roomLabel)}
                 </AppText>
               </View>
             </View>
@@ -121,7 +124,7 @@ const RoomStatus: React.FC = () => {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <StatusDot color={d.status === 'busy' ? c.info : c.mutedForeground} size={7} />
               <AppText size="xs" weight="600" color={d.status === 'busy' ? c.info : c.mutedForeground}>
-                {d.status === 'busy' ? 'กำลังตรวจ' : 'ว่าง'}
+                {d.status === 'busy' ? tt('กำลังตรวจ') : tt('ว่าง')}
               </AppText>
             </View>
           </View>
@@ -136,6 +139,7 @@ export const DashboardScreen: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions, derived } = useApp();
+  const tt = useT();
   const { width } = useWindowDimensions();
   const wide = width >= 1180;
   /** ธีม Christmas: แบนเนอร์โทนแดง + หิมะตกแทนตาข่าย */
@@ -157,7 +161,7 @@ export const DashboardScreen: React.FC = () => {
     {
       // จุดยึดสายตาฝั่งซ้าย — เลขคิวคือสิ่งที่เจ้าหน้าที่ใช้เรียกจริง เลยทำเป็นชิปให้เด่นกว่าคอลัมน์อื่น
       key: 'queue',
-      title: 'คิว',
+      title: tt('คิว'),
       width: 92,
       render: (r) => (
         <View style={{ gap: 3 }}>
@@ -192,7 +196,7 @@ export const DashboardScreen: React.FC = () => {
     },
     {
       key: 'name',
-      title: 'ชื่อ-นามสกุล',
+      title: tt('ชื่อ-นามสกุล'),
       flex: 1.3,
       render: (r) => (
         <View style={{ gap: 4 }}>
@@ -200,14 +204,14 @@ export const DashboardScreen: React.FC = () => {
             {r.name}
           </AppText>
           <AppText size="sm" muted>
-            {r.age} ปี
+            {tt('{n} ปี', { n: r.age })}
           </AppText>
         </View>
       ),
     },
     {
       key: 'allergy',
-      title: 'แพ้ยา',
+      title: tt('แพ้ยา'),
       width: 126,
       render: (r) =>
         r.allergy ? (
@@ -218,11 +222,11 @@ export const DashboardScreen: React.FC = () => {
           </AppText>
         ),
     },
-    { key: 'service', title: 'ประเภทรับบริการ', flex: 1.1, render: (r) => <AppText size="sm">{r.service}</AppText> },
+    { key: 'service', title: tt('ประเภทรับบริการ'), flex: 1.1, render: (r) => <AppText size="sm">{tt(r.service)}</AppText> },
     {
       // รหัสห้องเป็นตัวนำ ชื่อห้องเป็นบรรทัดรอง — เข้าชุดกับคอลัมน์คิวและชื่อ
       key: 'room',
-      title: 'ห้องตรวจ',
+      title: tt('ห้องตรวจ'),
       width: 124,
       render: (r) => (
         <View style={{ gap: 3 }}>
@@ -230,7 +234,7 @@ export const DashboardScreen: React.FC = () => {
             {r.room}
           </AppText>
           <AppText size="xs" muted numberOfLines={1}>
-            {roomLabel(r.room)}
+            {tt(roomLabel(r.room))}
           </AppText>
         </View>
       ),
@@ -238,13 +242,13 @@ export const DashboardScreen: React.FC = () => {
     {
       // จุดยึดสายตาฝั่งขวา — สถานะคือสิ่งที่ต้องกวาดหาว่าใครถึงคิวแล้ว
       key: 'status',
-      title: 'สถานะ',
+      title: tt('สถานะ'),
       width: 134,
       align: 'right',
       // Badge มี alignSelf:'flex-start' ในตัว ต้องสั่งทับถึงจะชิดขวาตาม align ของคอลัมน์
       render: (r) => (
         <Badge
-          label={STAGE_META[r.stage].label}
+          label={tt(STAGE_META[r.stage].label)}
           tone={STAGE_META[r.stage].tone}
           size="sm"
           dot
@@ -270,10 +274,10 @@ export const DashboardScreen: React.FC = () => {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}>
         {t.festive ? <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: t.colors.accent }} /> : null}
         <AppText size="md" weight="700" style={{ flex: 1 }}>
-          คิวผู้ป่วยวันนี้
+          {tt('คิวผู้ป่วยวันนี้')}
         </AppText>
         <AppText size="sm" muted mono>
-          {state.records.length} ราย
+          {state.records.length} {tt('ราย')}
         </AppText>
       </View>
 
@@ -287,9 +291,9 @@ export const DashboardScreen: React.FC = () => {
         empty={
           <EmptyState
             icon="card-outline"
-            title="ยังไม่มีคิวเช้านี้"
-            subtitle="เริ่มรับคนไข้รายแรกด้วยการอ่านบัตรประชาชน"
-            actionLabel="อ่านบัตรประชาชน · ลงทะเบียน"
+            title={tt('ยังไม่มีคิวเช้านี้')}
+            subtitle={tt('เริ่มรับคนไข้รายแรกด้วยการอ่านบัตรประชาชน')}
+            actionLabel={tt('อ่านบัตรประชาชน · ลงทะเบียน')}
             onAction={actions.openReg}
           />
         }
@@ -356,12 +360,12 @@ export const DashboardScreen: React.FC = () => {
               {greeting()}, {state.userName}
             </AppText>
             <AppText size="base" color={xmas ? FESTIVE_INK : MINT}>
-              {state.facility.name} • สาขา {state.branch} • ประจำ {state.room}
+              {tt('{facility} • สาขา {branch} • ประจำ {room}', { facility: state.facility.name, branch: state.branch, room: `${state.room.split(' ')[0]} ${tt(roomLabel(state.room.split(' ')[0]))}` })}
             </AppText>
           </View>
           {/* ปุ่มขาวบนพื้นเขียวเข้ม — งานหลักของหน้านี้ อยู่ระดับเดียวกับคำทักทาย */}
           <Button
-            label="อ่านบัตรประชาชน · ลงทะเบียน"
+            label={tt('อ่านบัตรประชาชน · ลงทะเบียน')}
             variant="outline"
             icon={<Ionicons name="card-outline" size={16} color={c.primary} />}
             onPress={actions.openReg}
@@ -369,17 +373,17 @@ export const DashboardScreen: React.FC = () => {
         </View>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, zIndex: 1 }}>
-          <KpiCard label="รอตรวจ" value={derived.waitCount} accent={t.kpi.wait} image={FigmaAssets.kpiWait} caption="คิวหนาแน่นปานกลาง" />
-          <KpiCard label="กำลังตรวจ" value={derived.examCount} accent={t.kpi.progress} image={FigmaAssets.kpiExam} caption="คัดกรองเบื้องต้น" />
-          <KpiCard label="เสร็จสิ้น" value={derived.doneCount} accent={t.kpi.done} image={FigmaAssets.kpiDone} caption="จ่ายยาและกลับบ้านแล้ว" />
-          <KpiCard label="รอผล Lab" value={derived.labCount} accent={t.kpi.lab} image={FigmaAssets.kpiLab} caption="แล็บเคมีคลินิก" />
+          <KpiCard label={tt('รอตรวจ')} value={derived.waitCount} accent={t.kpi.wait} image={FigmaAssets.kpiWait} caption={tt('คิวหนาแน่นปานกลาง')} />
+          <KpiCard label={tt('กำลังตรวจ')} value={derived.examCount} accent={t.kpi.progress} image={FigmaAssets.kpiExam} caption={tt('คัดกรองเบื้องต้น')} />
+          <KpiCard label={tt('เสร็จสิ้น')} value={derived.doneCount} accent={t.kpi.done} image={FigmaAssets.kpiDone} caption={tt('จ่ายยาและกลับบ้านแล้ว')} />
+          <KpiCard label={tt('รอผล Lab')} value={derived.labCount} accent={t.kpi.lab} image={FigmaAssets.kpiLab} caption={tt('แล็บเคมีคลินิก')} />
           <KpiCard
-            label="เวลารอเฉลี่ย"
+            label={tt('เวลารอเฉลี่ย')}
             value={state.records.length ? 18 : 0}
-            unit="นาที"
+            unit={tt('นาที')}
             accent={t.kpi.neutral}
             image={FigmaAssets.kpiAvg}
-            caption="เป้าหมายต่ำกว่า 20 นาที"
+            caption={tt('เป้าหมายต่ำกว่า 20 นาที')}
           />
         </View>
       </View>

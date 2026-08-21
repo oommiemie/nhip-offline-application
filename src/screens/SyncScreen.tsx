@@ -26,12 +26,13 @@ import { SYNC_STEP_LABELS, syncSteps } from '../state/mockData';
 import { useApp } from '../state/AppContext';
 import type { VisitRecord } from '../state/types';
 import { useTheme, withAlpha } from '../theme';
+import { tr, useT } from '../i18n';
 
 const syncBadge = (r: VisitRecord, syncing: boolean): { label: string; tone: 'success' | 'destructive' | 'info' | 'warning' } => {
-  if (r.sync === 'pass') return { label: 'อัปเดตผ่าน', tone: 'success' };
-  if (r.sync === 'fail') return { label: 'ไม่ผ่านเงื่อนไข', tone: 'destructive' };
-  if (syncing) return { label: 'กำลังอัพเดต', tone: 'info' };
-  return { label: 'รอการซิงค์', tone: 'warning' };
+  if (r.sync === 'pass') return { label: tr('อัปเดตผ่าน'), tone: 'success' };
+  if (r.sync === 'fail') return { label: tr('ไม่ผ่านเงื่อนไข'), tone: 'destructive' };
+  if (syncing) return { label: tr('กำลังอัพเดต'), tone: 'info' };
+  return { label: tr('รอการซิงค์'), tone: 'warning' };
 };
 
 /** หน้า 07 — Sync ข้อมูลขึ้น Cloud (Figma node 32:12410) */
@@ -39,6 +40,7 @@ export const SyncScreen: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions, derived } = useApp();
+  const tt = useT();
   const { width } = useWindowDimensions();
   const wide = width >= 1180;
   /** ต้องยืนยันตัวตน MOPH SSO ก่อนจึงจะอัปโหลดข้อมูลขึ้น Cloud ได้ */
@@ -78,7 +80,7 @@ export const SyncScreen: React.FC = () => {
     },
     {
       key: 'name',
-      title: 'ชื่อ-นามสกุล',
+      title: tt('ชื่อ-นามสกุล'),
       flex: 1.2,
       render: (r) => (
         <AppText size="sm" weight="600" numberOfLines={1}>
@@ -88,7 +90,7 @@ export const SyncScreen: React.FC = () => {
     },
     {
       key: 'time',
-      title: 'เวลา',
+      title: tt('เวลา'),
       width: 66,
       align: 'right',
       render: (r) => (
@@ -99,7 +101,7 @@ export const SyncScreen: React.FC = () => {
     },
     {
       key: 'steps',
-      title: 'ขั้นตอนการตรวจ',
+      title: tt('ขั้นตอนการตรวจ'),
       width: 236,
       render: (r) => (
         <View style={{ flexDirection: 'row', gap: 4 }}>
@@ -111,7 +113,7 @@ export const SyncScreen: React.FC = () => {
     },
     {
       key: 'result',
-      title: 'ผลการอัปเดต',
+      title: tt('ผลการอัปเดต'),
       width: 132,
       align: 'right',
       render: (r) => {
@@ -127,7 +129,7 @@ export const SyncScreen: React.FC = () => {
       align: 'right',
       render: (r, i) =>
         r.sync === 'fail' ? (
-          <Button label="แก้ไข" size="sm" variant="outline" onPress={() => actions.openEdit(offset + i)} />
+          <Button label={tt('แก้ไข')} size="sm" variant="outline" onPress={() => actions.openEdit(offset + i)} />
         ) : (
           <View />
         ),
@@ -198,7 +200,7 @@ export const SyncScreen: React.FC = () => {
               color={heroFg ?? (t.isDark ? c.foreground : c.secondary)}
               style={{ lineHeight: Math.round(t.fs.hero * 1.2) }}
             >
-              Sync ข้อมูลขึ้น Cloud
+              {tt('Sync ข้อมูลขึ้น Cloud')}
             </AppText>
             {/* บล็อกซ้ายเหลือ 2 บรรทัด: หัวเรื่อง + แถวสถานะผู้ทำรายการ (สถานะ · อีเมล · เวลา · ปุ่มสลับผู้ใช้) */}
             {state.sso === 'in' ? (
@@ -206,7 +208,7 @@ export const SyncScreen: React.FC = () => {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Ionicons name="checkmark-circle" size={17} color={heroFg ?? (t.isDark ? c.accent : c.primary)} />
                   <AppText size="base" weight="600" color={heroFg ?? (t.isDark ? c.accent : c.primaryStrong)}>
-                    ยืนยันตัวตน SSO แล้ว
+                    {tt('ยืนยันตัวตน SSO แล้ว')}
                   </AppText>
                 </View>
                 <AppText size="base" muted={!heroMuted} color={heroMuted}>
@@ -216,7 +218,7 @@ export const SyncScreen: React.FC = () => {
                   {state.ssoUser} · {state.ssoTime}
                 </AppText>
                 <Chip
-                  label="เปลี่ยนผู้ใช้งาน"
+                  label={tt('เปลี่ยนผู้ใช้งาน')}
                   accent
                   icon={<Ionicons name="swap-horizontal" size={15} color={c.ring} />}
                   onPress={() => {
@@ -230,11 +232,11 @@ export const SyncScreen: React.FC = () => {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
                   <StatusDot color={xmas ? '#FFD9DC' : c.destructive} size={7} />
                   <AppText size="base" muted={!heroMuted} color={heroMuted}>
-                    ยังไม่ยืนยันตัวตน — ต้องเข้าสู่ระบบ MOPH SSO ก่อนเริ่มซิงค์
+                    {tt('ยังไม่ยืนยันตัวตน — ต้องเข้าสู่ระบบ MOPH SSO ก่อนเริ่มซิงค์')}
                   </AppText>
                 </View>
                 <Chip
-                  label="เข้าสู่ระบบ SSO"
+                  label={tt('เข้าสู่ระบบ SSO')}
                   accent
                   icon={<Ionicons name="log-in-outline" size={15} color={c.ring} />}
                   onPress={actions.ssoOpen}
@@ -244,14 +246,14 @@ export const SyncScreen: React.FC = () => {
           </View>
           <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
             <Button
-              label="ดึงข้อมูลพื้นฐานใหม่"
+              label={tt('ดึงข้อมูลพื้นฐานใหม่')}
               variant="outline"
               icon={<Ionicons name="arrow-down" size={15} color={c.primary} />}
               onPress={actions.openSetup}
             />
             {/* ยังไม่ยืนยันตัวตน = ซิงค์ไม่ได้ ปุ่มถูกล็อกไว้ ต้องเข้าสู่ระบบ MOPH SSO ก่อน */}
             <Button
-              label={state.syncing ? 'กำลังซิงค์…' : 'เริ่มซิงค์ขึ้น Cloud'}
+              label={state.syncing ? tt('กำลังซิงค์…') : tt('เริ่มซิงค์ขึ้น Cloud')}
               icon={
                 <Ionicons
                   name={authed ? 'sync' : 'lock-closed'}
@@ -269,40 +271,40 @@ export const SyncScreen: React.FC = () => {
         {/* KPI 5 ใบ จัดชุดเดียวกับหน้าหลัก — ภาพเมฆ 3D ยื่นพ้นมุมล่างขวา + คำอธิบายใต้ตัวเลข */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, zIndex: 1 }}>
           <KpiCard
-            label="ในคิวรอซิงค์"
+            label={tt('ในคิวรอซิงค์')}
             value={derived.pendingCount}
             accent={t.kpi.wait}
             image={FigmaAssets.cloudQueue}
-            caption="รอส่งขึ้น Cloud"
+            caption={tt('รอส่งขึ้น Cloud')}
           />
           <KpiCard
-            label="อัปเดตผ่าน"
+            label={tt('อัปเดตผ่าน')}
             value={derived.passCount}
             accent={t.kpi.done}
             image={FigmaAssets.cloudPass}
-            caption="ขึ้นทะเบียนบน Cloud แล้ว"
+            caption={tt('ขึ้นทะเบียนบน Cloud แล้ว')}
           />
           <KpiCard
-            label="ไม่ผ่าน · ต้องแก้ไข"
+            label={tt('ไม่ผ่าน · ต้องแก้ไข')}
             value={derived.failCount}
             accent={t.kpi.fail}
             image={FigmaAssets.cloudFail}
-            caption="แก้ไขแล้วอัปโหลดซ้ำได้"
+            caption={tt('แก้ไขแล้วอัปโหลดซ้ำได้')}
           />
           <KpiCard
-            label="ความคืบหน้า"
+            label={tt('ความคืบหน้า')}
             value={state.syncPct}
             unit="%"
             accent={t.kpi.progress}
             image={FigmaAssets.cloudProgress}
-            caption={state.syncing ? 'กำลังอัปโหลดขึ้น Cloud' : 'ของรอบซิงค์ล่าสุด'}
+            caption={state.syncing ? tt('กำลังอัปโหลดขึ้น Cloud') : tt('ของรอบซิงค์ล่าสุด')}
           />
           <KpiCard
-            label="ซิงค์ล่าสุด"
+            label={tt('ซิงค์ล่าสุด')}
             value={state.lastSync}
             accent={t.kpi.neutral}
             image={FigmaAssets.cloudLast}
-            caption="เวลาที่ซิงค์สำเร็จครั้งก่อน"
+            caption={tt('เวลาที่ซิงค์สำเร็จครั้งก่อน')}
           />
         </View>
       </View>
@@ -311,7 +313,7 @@ export const SyncScreen: React.FC = () => {
       <View style={wide ? { flexDirection: 'row', gap: 16, alignItems: 'flex-start' } : { gap: 16 }}>
         {/* หัวตาราง: Figma มีแค่ชื่อ 16/700 กลางแถวสูง 78 ไม่มีคำอธิบายรอง ไม่มีเส้นคั่น (แถบหัวตารางคั่นเอง) */}
         <SectionCard
-          title="รายการข้อมูลผู้ป่วยรอ Sync ขึ้น Cloud"
+          title={tt('รายการข้อมูลผู้ป่วยรอ Sync ขึ้น Cloud')}
           divider={false}
           headerPaddingV={16}
           bodyPadding={0}
@@ -319,7 +321,7 @@ export const SyncScreen: React.FC = () => {
           style={[{ borderWidth: 0 }, wide ? { flex: 1 } : null]}
           right={
             <AppText size="sm" muted mono>
-              {state.records.length} ราย
+              {state.records.length} {tt('ราย')}
             </AppText>
           }
         >
@@ -333,8 +335,8 @@ export const SyncScreen: React.FC = () => {
             empty={
               <EmptyState
                 icon="cloud-upload-outline"
-                title="ยังไม่มีข้อมูลผู้ป่วยรอ Sync"
-                subtitle="ลงทะเบียนคนไข้ก่อน แล้วข้อมูลจะมารอซิงค์ขึ้น Cloud ที่หน้านี้"
+                title={tt('ยังไม่มีข้อมูลผู้ป่วยรอ Sync')}
+                subtitle={tt('ลงทะเบียนคนไข้ก่อน แล้วข้อมูลจะมารอซิงค์ขึ้น Cloud ที่หน้านี้')}
               />
             }
           />
@@ -355,14 +357,14 @@ export const SyncScreen: React.FC = () => {
 
         <View style={[{ gap: 0 }, wide ? { width: 330 } : null]}>
           <SectionCard
-            title="Log การซิงค์"
+            title={tt('Log การซิงค์')}
             divider={false}
             headerPaddingV={16}
             shadow="md"
             style={{ borderWidth: 0 }}
             right={
               <AppText size="sm" weight="700" color={c.primary} mono>
-                {state.syncPct}% ({derived.passCount}/{state.records.length || 0} สำเร็จ)
+                {tt('{pct}% ({pass}/{total} สำเร็จ)', { pct: state.syncPct, pass: derived.passCount, total: state.records.length || 0 })}
               </AppText>
             }
             bodyPadding={14}
@@ -372,7 +374,7 @@ export const SyncScreen: React.FC = () => {
               <LogConsole
                 lines={state.syncLog}
                 height={wide ? 420 : 260}
-                emptyText="ยังไม่เริ่มซิงค์ — ยืนยันตัวตนด้วย MOPH SSO ก่อนอัปโหลดข้อมูล"
+                emptyText={tt('ยังไม่เริ่มซิงค์ — ยืนยันตัวตนด้วย MOPH SSO ก่อนอัปโหลดข้อมูล')}
               />
             </View>
           </SectionCard>

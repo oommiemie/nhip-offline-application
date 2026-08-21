@@ -10,6 +10,7 @@ import type { OssTabId } from '../state/types';
 import { shade, useTheme, withAlpha } from '../theme';
 import { PatientListScreen } from './PatientListScreen';
 import { EncounterScreen } from './EncounterScreen';
+import { useT } from '../i18n';
 
 /** ไอคอนประจำเมนู One Stop Service */
 const TAB_ICONS: Record<OssTabId, keyof typeof MaterialCommunityIcons.glyphMap> = {
@@ -125,6 +126,7 @@ export const OssScreen: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions } = useApp();
+  const tt = useT();
   const [bar, setBar] = useState({ w: 0, h: 0 });
 
   const content =
@@ -136,9 +138,9 @@ export const OssScreen: React.FC = () => {
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <EmptyState
           icon="construct-outline"
-          title={OSS_TABS.find((x) => x.id === state.ossTab)?.label ?? ''}
-          subtitle="เมนูนี้ยังไม่เปิดใช้ในเวอร์ชันต้นแบบ — โครงหน้าจอ ตาราง และฟอร์มใช้ชุดคอมโพเนนต์เดียวกับหน้าที่ทำไว้แล้ว"
-          actionLabel="กลับหน้ารายการรับบริการ"
+          title={tt(OSS_TABS.find((x) => x.id === state.ossTab)?.label ?? '')}
+          subtitle={tt('เมนูนี้ยังไม่เปิดใช้ในเวอร์ชันต้นแบบ — โครงหน้าจอ ตาราง และฟอร์มใช้ชุดคอมโพเนนต์เดียวกับหน้าที่ทำไว้แล้ว')}
+          actionLabel={tt('กลับหน้ารายการรับบริการ')}
           onAction={() => actions.setOssTab('list')}
         />
       </View>
@@ -171,7 +173,7 @@ export const OssScreen: React.FC = () => {
             {OSS_TABS.map((tab) => (
               <TabPill
                 key={tab.id}
-                label={tab.label}
+                label={tt(tab.label)}
                 icon={TAB_ICONS[tab.id]}
                 active={state.ossTab === tab.id}
                 count={tab.id === 'list' ? state.records.length : 0}

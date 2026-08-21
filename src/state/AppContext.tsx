@@ -17,6 +17,7 @@ import type {
   ScreenId,
   VisitRecord,
 } from './types';
+import { tr } from '../i18n';
 
 const HN_BASE = 6800124;
 const HN_STEP = 137;
@@ -238,7 +239,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         syncLog: [
           line(`$ nhip-sync push --facility ${s.facility.code} --encrypt=aes256`),
           line(`↳ ผู้ทำรายการตรวจสอบ: ${s.ssoUser || 'somsri.j@moph.go.th'}`, 'info'),
-          line('↳ กำลังเข้ารหัสข้อมูลส่วนบุคคล TLS 1.3 …', 'info'),
+          line(tr('↳ กำลังเข้ารหัสข้อมูลส่วนบุคคล TLS 1.3 …'), 'info'),
         ],
       };
     });
@@ -252,7 +253,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const pass = records.filter((r) => r.sync === 'pass').length;
           const fail = records.length - pass;
           log.push(line(`สรุป: อัปโหลดผ่าน ${pass} รายการ · ไม่ผ่าน ${fail} รายการ`, fail ? 'err' : 'ok'));
-          log.push(line('ลบข้อมูลผู้ป่วยที่อัปโหลดผ่านออกจากคิวเครื่องแล้ว', 'info'));
+          log.push(line(tr('ลบข้อมูลผู้ป่วยที่อัปโหลดผ่านออกจากคิวเครื่องแล้ว'), 'info'));
           const notices = pushNotice(
             s.notices,
             fail
@@ -265,7 +266,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               : {
                   tone: 'success',
                   title: `ซิงค์สำเร็จ ${pass} รายการ`,
-                  detail: 'ข้อมูลขึ้น Cloud เรียบร้อย ลบออกจากคิวเครื่องแล้ว',
+                  detail: tr('ข้อมูลขึ้น Cloud เรียบร้อย ลบออกจากคิวเครื่องแล้ว'),
                   screen: 'sync',
                 },
           );
@@ -281,14 +282,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               ? {
                   kind: 'issue',
                   title: `ซิงค์เสร็จ · พบปัญหา ${fail} รายการ`,
-                  message: 'แก้ไขรายการที่ไม่ผ่านเงื่อนไขในตาราง แล้วกดอัปโหลดซ้ำได้ทันที',
+                  message: tr('แก้ไขรายการที่ไม่ผ่านเงื่อนไขในตาราง แล้วกดอัปโหลดซ้ำได้ทันที'),
                   detail: `อัปโหลดผ่าน ${pass} รายการ · ไม่ผ่าน ${fail} รายการ`,
-                  confirmLabel: 'ดูรายการ',
+                  confirmLabel: tr('ดูรายการ'),
                 }
               : {
                   kind: 'add',
-                  title: 'ซิงค์ขึ้น Cloud สำเร็จ',
-                  message: 'ข้อมูลผู้ป่วยทั้งหมดขึ้นทะเบียนบน Cloud แล้ว และถูกลบออกจากคิวเครื่อง',
+                  title: tr('ซิงค์ขึ้น Cloud สำเร็จ'),
+                  message: tr('ข้อมูลผู้ป่วยทั้งหมดขึ้นทะเบียนบน Cloud แล้ว และถูกลบออกจากคิวเครื่อง'),
                   detail: `อัปโหลดผ่าน ${pass} รายการ`,
                 },
           };
@@ -302,11 +303,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           r.errorField = f.field;
           r.errorValue = f.field === 'เลขบัตรประชาชน' ? r.cid : f.field === 'รหัส ICD-10' ? (r.icd[0]?.[0] ?? '—') : 'UCS-0000';
           log.push(line(`↳ [Error 422] ข้อมูลไม่สมบูรณ์: ${f.error}`, 'err'));
-          log.push(line('↳ ระบบบันทึกข้อผิดพลาดใน Log เครื่อง เตรียมทำการแก้ไขซ้ำ', 'err'));
+          log.push(line(tr('↳ ระบบบันทึกข้อผิดพลาดใน Log เครื่อง เตรียมทำการแก้ไขซ้ำ'), 'err'));
         } else {
           r.sync = 'pass';
           r.error = '';
-          log.push(line('↳ [Success] 201 Created · อัปโหลดขึ้น Cloud เรียบร้อย', 'ok'));
+          log.push(line(tr('↳ [Success] 201 Created · อัปโหลดขึ้น Cloud เรียบร้อย'), 'ok'));
         }
         syncIdx.current = i + 1;
         return { ...s, records, syncLog: log, syncPct: Math.round(((i + 1) / records.length) * 100) };
@@ -323,7 +324,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...s,
         sso: 'busy',
         setupLog: inSetup
-          ? [line('$ POST https://sso-uat.moph.go.th/admin/login'), line('↳ กำลังยืนยันตัวตน …', 'info')]
+          ? [line('$ POST https://sso-uat.moph.go.th/admin/login'), line(tr('↳ กำลังยืนยันตัวตน …'), 'info')]
           : s.setupLog,
       };
     });
@@ -334,8 +335,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         shouldSync = s.syncAfterAuth;
         const authedLog: LogLine[] = [
           line('$ POST https://sso-uat.moph.go.th/admin/login'),
-          line('↳ 200 ยืนยันตัวตนสำเร็จ · somsri.j@moph.go.th', 'ok'),
-          line('↳ ได้รับ access token (หมดอายุ 30 นาที)', 'ok'),
+          line(tr('↳ 200 ยืนยันตัวตนสำเร็จ · somsri.j@moph.go.th'), 'ok'),
+          line(tr('↳ ได้รับ access token (หมดอายุ 30 นาที)'), 'ok'),
           line('$ GET /sso/authorized-organizations'),
           line(`↳ 200 พบหน่วยงานที่เข้าถึงได้ ${FACILITIES.length} แห่ง`, 'ok'),
         ];
@@ -371,7 +372,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ...s.setupLog,
           line(`$ nhip-sync pull --facility ${f.code}`),
           line(`↳ หน่วยงานที่เลือก: ${f.name}`, 'info'),
-          line('↳ เชื่อมต่อ cloud endpoint … ok (142 ms)', 'ok'),
+          line(tr('↳ เชื่อมต่อ cloud endpoint … ok (142 ms)'), 'ok'),
         ],
       };
     });
@@ -385,8 +386,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (!t) {
           if (timers.current.setup) clearInterval(timers.current.setup);
           const rows = tables.reduce((sum, x) => sum + x.rows, 0);
-          log.push(line(`เสร็จสิ้น: นำเข้า ${tables.length} ตาราง · ${rows.toLocaleString('en-US')} แถว`, 'ok'));
-          log.push(line('ฐานข้อมูลพื้นฐานพร้อมใช้งานในโหมดออฟไลน์ (ไม่มีข้อมูลผู้ป่วย)', 'info'));
+          log.push(line(tr('เสร็จสิ้น: นำเข้า {tables} ตาราง · {rows} แถว', { tables: tables.length, rows: rows.toLocaleString('en-US') }), 'ok'));
+          log.push(line(tr('ฐานข้อมูลพื้นฐานพร้อมใช้งานในโหมดออฟไลน์ (ไม่มีข้อมูลผู้ป่วย)'), 'info'));
           return {
             ...s,
             setupRunning: false,
@@ -395,7 +396,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setupLog: log,
             notices: pushNotice(s.notices, {
               tone: 'success',
-              title: 'นำเข้าข้อมูลพื้นฐานเสร็จสิ้น',
+              title: tr('นำเข้าข้อมูลพื้นฐานเสร็จสิ้น'),
               detail: `${tables.length} ตาราง · ${rows.toLocaleString('en-US')} แถว พร้อมใช้งานออฟไลน์`,
             }),
           };
@@ -405,8 +406,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         t.pct = Math.min(100, t.pct + 10 + Math.random() * 14);
         if (t.pct >= 100) {
           t.pct = 100;
-          log.push(line('↳ ดาวน์โหลดสำเร็จ · SHA256 ok', 'ok'));
-          log.push(line(`↳ IMPORT ${t.file.replace('.json', '')} → ${t.rows.toLocaleString('en-US')} แถว (100%)`, 'ok'));
+          log.push(line(tr('↳ ดาวน์โหลดสำเร็จ · SHA256 ok'), 'ok'));
+          log.push(line(`↳ IMPORT ${t.file.replace('.json', '')} → ${t.rows.toLocaleString('en-US')} ${tr('แถว')} (100%)`, 'ok'));
           setupIdx.current = i + 1;
         }
         return { ...s, setupTables: tables, setupLog: log };
@@ -465,15 +466,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         card: null,
         notices: pushNotice(s.notices, {
           tone: 'info',
-          title: 'ลงทะเบียนผู้ป่วยใหม่',
-          detail: `${rec.name} · คิว ${rec.queueNo} · ${rec.service}`,
+          title: tr('ลงทะเบียนผู้ป่วยใหม่'),
+          detail: tr('{name} · คิว {queue} · {service}', { name: rec.name, queue: rec.queueNo, service: tr(rec.service) }),
           screen: 'dashboard',
         }),
         alert: {
           kind: 'add',
-          title: 'ลงทะเบียนคนไข้ใหม่สำเร็จ',
-          message: `เพิ่ม ${rec.name} เข้าคิวรับบริการแล้ว`,
-          detail: `HN ${rec.hn} · คิว ${rec.queueNo} · ${rec.service}`,
+          title: tr('ลงทะเบียนคนไข้ใหม่สำเร็จ'),
+          message: tr('เพิ่ม {name} เข้าคิวรับบริการแล้ว', { name: rec.name }),
+          detail: tr('HN {hn} · คิว {queue} · {service}', { hn: rec.hn, queue: rec.queueNo, service: tr(rec.service) }),
         },
       };
     });
@@ -527,7 +528,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ssoUser: '',
           ssoTime: '',
           syncing: false,
-          syncLog: s.syncing ? [...s.syncLog, line('ยกเลิกการซิงค์ — ออกจากระบบ MOPH SSO', 'err')] : s.syncLog,
+          syncLog: s.syncing ? [...s.syncLog, line(tr('ยกเลิกการซิงค์ — ออกจากระบบ MOPH SSO'), 'err')] : s.syncLog,
         }));
       },
       startSetupImport,
@@ -556,8 +557,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             records,
             alert: {
               kind: 'edit',
-              title: 'แก้ไขข้อมูลผู้ป่วยแล้ว',
-              message: `บันทึกข้อมูลของ ${p.name || r.name} ทับของเดิมเรียบร้อย`,
+              title: tr('แก้ไขข้อมูลผู้ป่วยแล้ว'),
+              message: tr('บันทึกข้อมูลของ {name} ทับของเดิมเรียบร้อย', { name: p.name || r.name }),
               detail: `HN ${r.hn}`,
             },
           };
@@ -586,10 +587,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               editingIdx: null,
               alert: {
                 kind: 'warning',
-                title: 'ต้องยืนยันตัวตนก่อนอัปโหลด',
-                message: 'การส่งข้อมูลขึ้น Cloud ต้องระบุผู้ทำรายการ — เข้าสู่ระบบ MOPH SSO ก่อนแล้วลองใหม่',
-                confirmLabel: 'เข้าสู่ระบบ SSO',
-                cancelLabel: 'ยกเลิก',
+                title: tr('ต้องยืนยันตัวตนก่อนอัปโหลด'),
+                message: tr('การส่งข้อมูลขึ้น Cloud ต้องระบุผู้ทำรายการ — เข้าสู่ระบบ MOPH SSO ก่อนแล้วลองใหม่'),
+                confirmLabel: tr('เข้าสู่ระบบ SSO'),
+                cancelLabel: tr('ยกเลิก'),
                 onConfirm: () => setState((p) => ({ ...p, ssoModalOpen: true })),
               },
             };
@@ -599,8 +600,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               ...s,
               alert: {
                 kind: 'error',
-                title: 'บันทึกไม่สำเร็จ',
-                message: `ต้องระบุ${s.records[idx]?.errorField ?? 'ข้อมูลที่แก้ไข'}ก่อนอัปโหลดซ้ำ`,
+                title: tr('บันทึกไม่สำเร็จ'),
+                message: tr('ต้องระบุ{field}ก่อนอัปโหลดซ้ำ', { field: tr(s.records[idx]?.errorField ?? 'ข้อมูลที่แก้ไข') }),
                 detail: `HN ${s.records[idx]?.hn ?? ''}`,
               },
             };
@@ -615,19 +616,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             lastSync: nowHM(),
             notices: pushNotice(s.notices, {
               tone: 'success',
-              title: 'แก้ไขและอัปโหลดซ้ำสำเร็จ',
+              title: tr('แก้ไขและอัปโหลดซ้ำสำเร็จ'),
               detail: `HN ${r?.hn ?? ''} · ${r?.errorField ?? ''}`,
               screen: 'sync',
             }),
             syncLog: [
               ...s.syncLog,
-              line(`$ PUT /api/v2/visit  HN ${r?.hn ?? ''}  (แก้ไข ${r?.errorField ?? ''})`),
-              line('↳ [Success] 200 OK · อัปโหลดขึ้น Cloud เรียบร้อย', 'ok'),
+              line(`$ PUT /api/v2/visit  HN ${r?.hn ?? ''}  (${tr('แก้ไข')} ${tr(r?.errorField ?? '')})`),
+              line(tr('↳ [Success] 200 OK · อัปโหลดขึ้น Cloud เรียบร้อย'), 'ok'),
             ],
             alert: {
               kind: 'edit',
-              title: 'แก้ไขและอัปโหลดซ้ำสำเร็จ',
-              message: `${r?.errorField ?? 'ข้อมูล'}ถูกแก้ไขและส่งขึ้น Cloud เรียบร้อยแล้ว`,
+              title: tr('แก้ไขและอัปโหลดซ้ำสำเร็จ'),
+              message: tr('{field}ถูกแก้ไขและส่งขึ้น Cloud เรียบร้อยแล้ว', { field: tr(r?.errorField ?? 'ข้อมูล') }),
               detail: `HN ${r?.hn ?? ''} · ${newValue}`,
             },
           };

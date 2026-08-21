@@ -8,6 +8,7 @@ import { useApp } from '../state/AppContext';
 import { useTheme, withAlpha } from '../theme';
 import type { VisitRecord } from '../state/types';
 import { initials, thaiToday } from '../utils/format';
+import { useT } from '../i18n';
 
 /** หน่วยของสัญญาณชีพแต่ละตัว (คีย์ตรงกับ mockData) */
 const VITAL_UNITS: Record<string, string> = {
@@ -93,6 +94,7 @@ const Field: React.FC<{ label: string; value: string }> = ({ label, value }) => 
 /** รางแสดงขั้นตอนที่บันทึกครบแล้ว — วงกลมติ๊กถูกเชื่อมด้วยเส้น */
 const StepRail: React.FC<{ steps: Array<[string, boolean]> }> = ({ steps }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   return (
     <View style={{ flexDirection: 'row' }}>
@@ -132,7 +134,7 @@ const StepRail: React.FC<{ steps: Array<[string, boolean]> }> = ({ steps }) => {
               numberOfLines={2}
               color={on ? c.foreground : c.mutedForeground}
             >
-              {label}
+              {tt(label)}
             </AppText>
           </View>
         );
@@ -146,6 +148,7 @@ export const OpdCardModal: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions } = useApp();
+  const tt = useT();
   const { width } = useWindowDimensions();
   const wide = width >= 860;
 
@@ -155,10 +158,10 @@ export const OpdCardModal: React.FC = () => {
 
   const syncBadge =
     r.sync === 'pass'
-      ? { label: 'อัปเดตผ่าน', tone: 'success' as const }
+      ? { label: tt('อัปเดตผ่าน'), tone: 'success' as const }
       : r.sync === 'fail'
-        ? { label: 'ไม่ผ่านเงื่อนไข', tone: 'destructive' as const }
-        : { label: 'รอการซิงค์', tone: 'warning' as const };
+        ? { label: tt('ไม่ผ่านเงื่อนไข'), tone: 'destructive' as const }
+        : { label: tt('รอการซิงค์'), tone: 'warning' as const };
 
   const steps: Array<[string, boolean]> = [
     ['ซักประวัติ', r.fHist],
@@ -180,7 +183,7 @@ export const OpdCardModal: React.FC = () => {
     <AppModal
       visible
       onClose={actions.closeOpd}
-      title="OPD Card · สรุปการรับบริการ"
+      title={tt('OPD Card · สรุปการรับบริการ')}
       titleBadge={
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: c.muted }}>
@@ -197,7 +200,7 @@ export const OpdCardModal: React.FC = () => {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 240 }}>
             <MaterialCommunityIcons name="cloud-upload-outline" size={17} color={c.mutedForeground} />
             <AppText size="sm" muted>
-              สถานะอัปโหลดขึ้น Cloud
+              {tt('สถานะอัปโหลดขึ้น Cloud')}
             </AppText>
             <Badge label={syncBadge.label} tone={syncBadge.tone} size="sm" />
             {r.sync === 'fail' && r.error ? (
@@ -207,9 +210,9 @@ export const OpdCardModal: React.FC = () => {
             ) : null}
           </View>
           {r.sync === 'fail' ? (
-            <Button label="แก้ไขและอัปโหลดใหม่" variant="destructive" onPress={() => actions.openEdit(idx)} />
+            <Button label={tt('แก้ไขและอัปโหลดใหม่')} variant="destructive" onPress={() => actions.openEdit(idx)} />
           ) : null}
-          <Button label="ปิด" variant="outline" onPress={actions.closeOpd} />
+          <Button label={tt('ปิด')} variant="outline" onPress={actions.closeOpd} />
         </View>
       }
     >
@@ -229,8 +232,8 @@ export const OpdCardModal: React.FC = () => {
               </AppText>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
                 <Pill label={`HN ${r.hn}`} mono icon="person-outline" />
-                <Pill label={`${r.sex} · ${r.age} ปี`} />
-                <Pill label={r.right} icon="shield-checkmark-outline" />
+                <Pill label={`${tt(r.sex)} · ${tt('{n} ปี', { n: r.age })}`} />
+                <Pill label={tt(r.right)} icon="shield-checkmark-outline" />
                 <Pill label={`คิว ${r.queueNo}`} mono />
               </View>
             </View>
@@ -238,14 +241,14 @@ export const OpdCardModal: React.FC = () => {
             <View style={{ gap: 8, alignItems: wide ? 'flex-end' : 'flex-start', minWidth: 200 }}>
               <View style={{ alignItems: wide ? 'flex-end' : 'flex-start', gap: 2 }}>
                 <AppText size="xs" muted>
-                  วัน-เวลารับบริการ
+                  {tt('วัน-เวลารับบริการ')}
                 </AppText>
                 <AppText size="sm" weight="600">
                   {thaiToday()} · {r.time}
                 </AppText>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                <Badge label={r.service} tone="primary" size="sm" />
+                <Badge label={tt(r.service)} tone="primary" size="sm" />
                 <AppText size="xs" muted mono>
                   ห้อง {r.room}
                 </AppText>
@@ -259,7 +262,7 @@ export const OpdCardModal: React.FC = () => {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <Ionicons name="card-outline" size={15} color={c.mutedForeground} />
               <AppText size="sm" muted>
-                เลขบัตรประชาชน
+                {tt('เลขบัตรประชาชน')}
               </AppText>
               <AppText size="sm" weight="600" mono>
                 {r.cid}
@@ -269,7 +272,7 @@ export const OpdCardModal: React.FC = () => {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
                 <Ionicons name="call-outline" size={15} color={c.mutedForeground} />
                 <AppText size="sm" muted>
-                  โทร
+                  {tt('โทร')}
                 </AppText>
                 <AppText size="sm" weight="600" mono>
                   {r.phone}
@@ -279,7 +282,7 @@ export const OpdCardModal: React.FC = () => {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, flex: 1, minWidth: 260 }}>
               <Ionicons name="location-outline" size={15} color={c.mutedForeground} />
               <AppText size="sm" muted>
-                ที่อยู่
+                {tt('ที่อยู่')}
               </AppText>
               <AppText size="sm" weight="600" style={{ flex: 1 }} numberOfLines={1}>
                 {r.address}
@@ -292,20 +295,20 @@ export const OpdCardModal: React.FC = () => {
           <AlertBand
             variant="danger"
             title={`แพ้ยา ${r.allergy}`}
-            detail="ตรวจสอบซ้ำก่อนสั่งยาทุกครั้ง"
+            detail={tt('ตรวจสอบซ้ำก่อนสั่งยาทุกครั้ง')}
             style={{ borderRadius: t.radius.md }}
           />
         ) : (
           <AlertBand
             variant="caution"
-            title="ไม่พบประวัติแพ้ยา"
-            detail="สอบถามและบันทึกซ้ำทุกครั้งที่รับบริการ"
+            title={tt('ไม่พบประวัติแพ้ยา')}
+            detail={tt('สอบถามและบันทึกซ้ำทุกครั้งที่รับบริการ')}
             style={{ borderRadius: t.radius.md }}
           />
         )}
 
         {/* ความครบถ้วนของการบันทึก */}
-        <InfoCard title="ขั้นตอนที่บันทึกแล้ว" icon="progress-check">
+        <InfoCard title={tt('ขั้นตอนที่บันทึกแล้ว')} icon="progress-check">
           <View style={{ gap: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <AppText size="sm" weight="700" mono color={doneSteps === steps.length ? c.success : c.warning}>
@@ -322,7 +325,7 @@ export const OpdCardModal: React.FC = () => {
         {/* เนื้อหา 2 คอลัมน์ */}
         <View style={wide ? { flexDirection: 'row', gap: 14, alignItems: 'flex-start' } : { gap: 14 }}>
           <View style={{ flex: 1, gap: 14 }}>
-            <InfoCard title="สัญญาณชีพ" icon="heart-pulse">
+            <InfoCard title={tt('สัญญาณชีพ')} icon="heart-pulse">
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {r.vitals.map(([k, v]) => {
                   const flag = vitalFlag(k, v, c.warning, c.destructive);
@@ -343,11 +346,11 @@ export const OpdCardModal: React.FC = () => {
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <AppText size="xs" muted style={{ flex: 1 }} numberOfLines={1}>
-                          {k}
+                          {tt(k)}
                         </AppText>
                         {flag ? (
                           <AppText size="xs" weight="700" color={flag.tone}>
-                            {flag.note}
+                            {tt(flag.note)}
                           </AppText>
                         ) : null}
                       </View>
@@ -367,21 +370,21 @@ export const OpdCardModal: React.FC = () => {
               </View>
             </InfoCard>
 
-            <InfoCard title="ซักประวัติ / ตรวจร่างกาย" icon="clipboard-text-outline">
+            <InfoCard title={tt('ซักประวัติ / ตรวจร่างกาย')} icon="clipboard-text-outline">
               <View style={{ gap: 10 }}>
-                <Field label="อาการสำคัญ (CC)" value={r.cc} />
+                <Field label={tt('อาการสำคัญ (CC)')} value={r.cc} />
                 <Divider />
-                <Field label="ประวัติปัจจุบัน (HPI)" value={r.hpi} />
+                <Field label={tt('ประวัติปัจจุบัน (HPI)')} value={r.hpi} />
                 <Divider />
-                <Field label="การตรวจร่างกาย (PE)" value={r.pe} />
+                <Field label={tt('การตรวจร่างกาย (PE)')} value={r.pe} />
                 <Divider />
-                <Field label="โรคประจำตัว" value={r.chronic} />
+                <Field label={tt('โรคประจำตัว')} value={r.chronic} />
               </View>
             </InfoCard>
           </View>
 
           <View style={{ flex: 1, gap: 14 }}>
-            <InfoCard title="การวินิจฉัย (ICD-10)" icon="stethoscope" count={r.icd.length}>
+            <InfoCard title={tt('การวินิจฉัย (ICD-10)')} icon="stethoscope" count={r.icd.length}>
               {r.icd.length ? (
                 <View style={{ gap: 10 }}>
                   {r.icd.map(([code, name, kind], i) => (
@@ -403,19 +406,19 @@ export const OpdCardModal: React.FC = () => {
                         <AppText size="sm" weight="600" style={{ flex: 1 }} numberOfLines={2}>
                           {name}
                         </AppText>
-                        <Badge label={kind} tone={kind === 'หลัก' ? 'primary' : 'neutral'} size="sm" />
+                        <Badge label={tt(kind)} tone={kind === 'หลัก' ? 'primary' : 'neutral'} size="sm" />
                       </View>
                     </React.Fragment>
                   ))}
                 </View>
               ) : (
                 <AppText size="sm" muted>
-                  ยังไม่บันทึกการวินิจฉัย
+                  {tt('ยังไม่บันทึกการวินิจฉัย')}
                 </AppText>
               )}
             </InfoCard>
 
-            <InfoCard title="ยาที่จ่าย" icon="pill" count={r.drugs.length}>
+            <InfoCard title={tt('ยาที่จ่าย')} icon="pill" count={r.drugs.length}>
               {r.drugs.length ? (
                 <View style={{ gap: 9 }}>
                   {r.drugs.map((d) => {
@@ -438,12 +441,12 @@ export const OpdCardModal: React.FC = () => {
                 </View>
               ) : (
                 <AppText size="sm" muted>
-                  ไม่มีการจ่ายยาในครั้งนี้
+                  {tt('ไม่มีการจ่ายยาในครั้งนี้')}
                 </AppText>
               )}
             </InfoCard>
 
-            <InfoCard title="Lab / X-ray / วัคซีน" icon="flask-outline" count={orders.length}>
+            <InfoCard title={tt('Lab / X-ray / วัคซีน')} icon="flask-outline" count={orders.length}>
               {orders.length ? (
                 <View style={{ gap: 9 }}>
                   {orders.map(([kind, text, tone]) => (
@@ -470,7 +473,7 @@ export const OpdCardModal: React.FC = () => {
                 </View>
               ) : (
                 <AppText size="sm" muted>
-                  ไม่มีรายการสั่งตรวจหรือวัคซีน
+                  {tt('ไม่มีรายการสั่งตรวจหรือวัคซีน')}
                 </AppText>
               )}
             </InfoCard>

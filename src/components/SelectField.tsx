@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { useT } from '../i18n';
 
 export interface SelectOption {
   value: string;
@@ -41,18 +42,23 @@ export const SelectField: React.FC<SelectFieldProps> = ({
   value,
   options,
   onChange,
-  placeholder = 'เลือก…',
+  placeholder,
   disabled = false,
   containerStyle,
 }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   const { width: winW, height: winH } = useWindowDimensions();
   const fieldRef = useRef<View>(null);
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
-  const items: SelectOption[] = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
+  // ค่าใน value คงเป็นภาษาไทยเสมอ (เป็นข้อมูล) — แปลเฉพาะป้ายที่แสดง
+  const items: SelectOption[] = options.map((o) =>
+    typeof o === 'string' ? { value: o, label: tt(o) } : { ...o, label: tt(o.label) },
+  );
+  const hint = placeholder ?? tt('เลือก…');
   const selected = items.find((o) => o.value === value);
 
   const openMenu = () => {
@@ -100,7 +106,7 @@ export const SelectField: React.FC<SelectFieldProps> = ({
         }}
       >
         <AppText size="md" color={selected ? c.foreground : c.mutedForeground} style={{ flex: 1 }} numberOfLines={1}>
-          {selected ? selected.label : placeholder}
+          {selected ? selected.label : hint}
         </AppText>
         <View style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}>
           <Ionicons name="chevron-down" size={16} color={c.mutedForeground} />

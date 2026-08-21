@@ -17,6 +17,7 @@ const WEB_NO_OUTLINE_VIEW = Platform.OS === 'web' ? ({ outlineStyle: 'none', out
 
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { useT } from '../i18n';
 
 export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -53,6 +54,7 @@ export const TextField: React.FC<TextFieldProps> = ({
   ...inputProps
 }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   const [focused, setFocused] = React.useState(false);
   const [reveal, setReveal] = React.useState(false);
@@ -129,7 +131,7 @@ export const TextField: React.FC<TextFieldProps> = ({
             onPress={() => setReveal((v) => !v)}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel={reveal ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+            accessibilityLabel={reveal ? tt('ซ่อนรหัสผ่าน') : tt('แสดงรหัสผ่าน')}
             style={({ pressed }) => [{ padding: 2, opacity: pressed ? 0.5 : 1 }, WEB_NO_OUTLINE_VIEW]}
           >
             <Ionicons

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppModal, AppText, Badge, Button, TextField } from '../components';
 import { ICD_CATALOG } from '../state/mockData';
 import { useTheme, withAlpha } from '../theme';
+import { useT } from '../i18n';
 
 export interface AddIcdModalProps {
   visible: boolean;
@@ -20,6 +21,7 @@ export interface AddIcdModalProps {
  */
 export const AddIcdModal: React.FC<AddIcdModalProps> = ({ visible, existingCodes, onClose, onAdd }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   const [q, setQ] = useState('');
   const [picked, setPicked] = useState<[string, string] | null>(null);
@@ -47,13 +49,13 @@ export const AddIcdModal: React.FC<AddIcdModalProps> = ({ visible, existingCodes
     <AppModal
       visible={visible}
       onClose={onClose}
-      title="เพิ่มการวินิจฉัย (ICD-10)"
+      title={tt('เพิ่มการวินิจฉัย (ICD-10)')}
       maxWidth={560}
       footer={
         <>
-          <Button label="ยกเลิก" variant="outline" onPress={onClose} />
+          <Button label={tt('ยกเลิก')} variant="outline" onPress={onClose} />
           <Button
-            label="เพิ่มการวินิจฉัย"
+            label={tt('เพิ่มการวินิจฉัย')}
             disabled={!picked}
             onPress={() => {
               if (picked) onAdd(picked[0], picked[1], kind);
@@ -70,14 +72,14 @@ export const AddIcdModal: React.FC<AddIcdModalProps> = ({ visible, existingCodes
             setQ(v);
             setPicked(null);
           }}
-          placeholder="ค้นด้วยรหัส (เช่น I10) หรือชื่อโรค"
+          placeholder={tt('ค้นด้วยรหัส (เช่น I10) หรือชื่อโรค')}
           icon="search-outline"
         />
 
         {/* ชนิดการวินิจฉัย */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <AppText size="sm" weight="600" style={{ marginRight: 2 }}>
-            ชนิด
+            {tt('ชนิด')}
           </AppText>
           {(['หลัก', 'ร่วม'] as const).map((k) => {
             const on = kind === k;
@@ -97,13 +99,13 @@ export const AddIcdModal: React.FC<AddIcdModalProps> = ({ visible, existingCodes
                 }}
               >
                 <AppText size="sm" weight={on ? '700' : '400'} color={on ? c.primaryForeground : c.foreground}>
-                  {k}
+                  {tt(k)}
                 </AppText>
               </Pressable>
             );
           })}
           <AppText size="xs" muted style={{ flex: 1 }}>
-            {kind === 'หลัก' ? 'โรคหลักของการมาครั้งนี้' : 'โรคที่พบร่วม'}
+            {kind === 'หลัก' ? tt('โรคหลักของการมาครั้งนี้') : tt('โรคที่พบร่วม')}
           </AppText>
         </View>
 
@@ -149,7 +151,7 @@ export const AddIcdModal: React.FC<AddIcdModalProps> = ({ visible, existingCodes
         {picked ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <AppText size="sm" muted>
-              จะเพิ่ม:
+              {tt('จะเพิ่ม:')}
             </AppText>
             <AppText size="sm" weight="700" mono color={c.primary}>
               {picked[0]}
@@ -157,7 +159,7 @@ export const AddIcdModal: React.FC<AddIcdModalProps> = ({ visible, existingCodes
             <AppText size="sm" weight="600" style={{ flex: 1 }} numberOfLines={1}>
               {picked[1]}
             </AppText>
-            <Badge label={kind} tone={kind === 'หลัก' ? 'primary' : 'neutral'} size="sm" />
+            <Badge label={tt(kind)} tone={kind === 'หลัก' ? 'primary' : 'neutral'} size="sm" />
           </View>
         ) : null}
       </View>

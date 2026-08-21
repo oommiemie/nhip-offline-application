@@ -20,6 +20,7 @@ import { useApp } from '../state/AppContext';
 import type { QueueStage, VisitRecord } from '../state/types';
 import { useTheme } from '../theme';
 import { initials } from '../utils/format';
+import { useT } from '../i18n';
 
 type StageFilter = 'all' | QueueStage;
 
@@ -28,6 +29,7 @@ export const PatientListScreen: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions } = useApp();
+  const tt = useT();
   const { width } = useWindowDimensions();
   const wide = width >= 980;
 
@@ -72,19 +74,19 @@ export const PatientListScreen: React.FC = () => {
 
   // dropdown กรองสถานะ — ป้ายมีจำนวนต่อท้าย เช่น "รอเรียกตรวจ (8)" · แปลงกลับเป็นค่าได้จากตาราง
   const stageItems: Array<[StageFilter, string]> = [
-    ['all', `ทั้งหมด (${countOf('all')})`],
-    ['wait', `${STAGE_META.wait.label} (${countOf('wait')})`],
-    ['screen', `${STAGE_META.screen.label} (${countOf('screen')})`],
-    ['pending', `${STAGE_META.pending.label} (${countOf('pending')})`],
-    ['lab', `${STAGE_META.lab.label} (${countOf('lab')})`],
-    ['done', `${STAGE_META.done.label} (${countOf('done')})`],
+    ['all', tt('ทั้งหมด ({n})', { n: countOf('all') })],
+    ['wait', `${tt(STAGE_META.wait.label)} (${countOf('wait')})`],
+    ['screen', `${tt(STAGE_META.screen.label)} (${countOf('screen')})`],
+    ['pending', `${tt(STAGE_META.pending.label)} (${countOf('pending')})`],
+    ['lab', `${tt(STAGE_META.lab.label)} (${countOf('lab')})`],
+    ['done', `${tt(STAGE_META.done.label)} (${countOf('done')})`],
   ];
   const stageLabel = stageItems.find(([id]) => id === stage)?.[1] ?? stageItems[0][1];
 
   const columns: Array<Column<{ r: VisitRecord; i: number }>> = [
     {
       key: 'patient',
-      title: 'ผู้ป่วย',
+      title: tt('ผู้ป่วย'),
       flex: 1.6,
       render: ({ r }) => (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
@@ -95,7 +97,7 @@ export const PatientListScreen: React.FC = () => {
               {r.name}
             </AppText>
             <AppText size="xs" muted numberOfLines={1}>
-              HN <AppText size="xs" mono muted>{r.hn}</AppText> · {r.sex} {r.age} ปี · {r.right}
+              HN <AppText size="xs" mono muted>{r.hn}</AppText> · {tt(r.sex)} {tt('{n} ปี', { n: r.age })} · {tt(r.right)}
             </AppText>
           </View>
         </View>
@@ -103,7 +105,7 @@ export const PatientListScreen: React.FC = () => {
     },
     {
       key: 'warn',
-      title: 'ข้อควรระวัง',
+      title: tt('ข้อควรระวัง'),
       width: 190,
       // แสดงเฉพาะเมื่อมีข้อมูลจริง — แถวที่ไม่มีอะไรต้องระวังปล่อยว่างไว้ให้สายตาพัก
       render: ({ r }) => {
@@ -117,10 +119,10 @@ export const PatientListScreen: React.FC = () => {
         }
         return (
           <View style={{ gap: 3 }}>
-            {r.allergy ? <Badge label={`แพ้ ${r.allergy}`} tone="destructive" size="sm" /> : null}
+            {r.allergy ? <Badge label={tt('แพ้ {drug}', { drug: r.allergy })} tone="destructive" size="sm" /> : null}
             {chronic ? (
               <AppText size="xs" muted numberOfLines={1}>
-                โรคประจำตัว {chronic}
+                {tt('โรคประจำตัว')} {chronic}
               </AppText>
             ) : null}
           </View>
@@ -129,7 +131,7 @@ export const PatientListScreen: React.FC = () => {
     },
     {
       key: 'time',
-      title: 'มาถึง',
+      title: tt('มาถึง'),
       width: 76,
       align: 'right',
       render: ({ r }) => (
@@ -140,9 +142,9 @@ export const PatientListScreen: React.FC = () => {
     },
     {
       key: 'status',
-      title: 'สถานะ',
+      title: tt('สถานะ'),
       width: 128,
-      render: ({ r }) => <Badge label={STAGE_META[r.stage].label} tone={STAGE_META[r.stage].tone} size="sm" />,
+      render: ({ r }) => <Badge label={tt(STAGE_META[r.stage].label)} tone={STAGE_META[r.stage].tone} size="sm" />,
     },
     {
       key: 'go',
@@ -151,7 +153,7 @@ export const PatientListScreen: React.FC = () => {
       align: 'right',
       render: ({ i }) => (
         <Button
-          label="เปิดบันทึก"
+          label={tt('เปิดบันทึก')}
           variant="outline"
           size="sm"
           iconRight={<Ionicons name="chevron-forward" size={14} color={c.primary} />}
@@ -169,7 +171,7 @@ export const PatientListScreen: React.FC = () => {
           <TextField
             value={q}
             onChangeText={setQ}
-            placeholder="ค้นหา HN · เลขบัตรประชาชน · ชื่อ-นามสกุล"
+            placeholder={tt('ค้นหา HN · เลขบัตรประชาชน · ชื่อ-นามสกุล')}
             icon="search-outline"
             containerStyle={{ flex: 1, minWidth: 240, maxWidth: 460 }}
           />
@@ -181,10 +183,10 @@ export const PatientListScreen: React.FC = () => {
           />
           <View style={{ flex: 1, minWidth: 4 }} />
           <AppText size="xs" mono muted>
-            แสดง {filtered.length} / {state.records.length} ราย
+            {tt('แสดง')} {filtered.length} / {state.records.length} {tt('ราย')}
           </AppText>
           <Button
-            label="ลงทะเบียนคนไข้ใหม่"
+            label={tt('ลงทะเบียนคนไข้ใหม่')}
             icon={<Ionicons name="card-outline" size={16} color={c.primaryForeground} />}
             onPress={actions.openReg}
           />
@@ -196,10 +198,10 @@ export const PatientListScreen: React.FC = () => {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}>
           {t.festive ? <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: t.colors.accent }} /> : null}
           <AppText size="md" weight="700" style={{ flex: 1 }}>
-            รายการรับบริการวันนี้
+            {tt('รายการรับบริการวันนี้')}
           </AppText>
           <AppText size="sm" muted mono>
-            {filtered.length} ราย
+            {filtered.length} {tt('ราย')}
           </AppText>
         </View>
         <DataTable
@@ -212,13 +214,13 @@ export const PatientListScreen: React.FC = () => {
           empty={
             <EmptyState
               icon="card-outline"
-              title={q || stage !== 'all' ? 'ไม่พบคนไข้ตามเงื่อนไขที่ค้น' : 'ยังไม่มีรายการรับบริการในกะนี้'}
+              title={q || stage !== 'all' ? tt('ไม่พบคนไข้ตามเงื่อนไขที่ค้น') : tt('ยังไม่มีรายการรับบริการในกะนี้')}
               subtitle={
                 q || stage !== 'all'
-                  ? 'ลองล้างคำค้นหรือเลือกสถานะ “ทั้งหมด”'
-                  : 'อ่านบัตรประชาชนเพื่อเปิดคิวคนไข้รายแรกของวัน'
+                  ? tt('ลองล้างคำค้นหรือเลือกสถานะ “ทั้งหมด”')
+                  : tt('อ่านบัตรประชาชนเพื่อเปิดคิวคนไข้รายแรกของวัน')
               }
-              actionLabel={q || stage !== 'all' ? 'ล้างการค้นหา' : 'อ่านบัตรประชาชน · ลงทะเบียน'}
+              actionLabel={q || stage !== 'all' ? tt('ล้างการค้นหา') : tt('อ่านบัตรประชาชน · ลงทะเบียน')}
               onAction={
                 q || stage !== 'all'
                   ? () => {

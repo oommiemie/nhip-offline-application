@@ -8,6 +8,7 @@ import type { Tone } from '../theme';
 import { AppModal } from './AppModal';
 import { AppText } from './AppText';
 import { Button } from './Button';
+import { useT } from '../i18n';
 
 const USE_NATIVE = Platform.OS !== 'web';
 
@@ -162,6 +163,7 @@ export const AlertDialog: React.FC<AlertDialogProps> = ({
   onClose,
 }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   const spec = ALERT_KINDS[kind];
   const tone = t.tones[spec.tone];
@@ -232,11 +234,11 @@ export const AlertDialog: React.FC<AlertDialogProps> = ({
 
         <Animated.View style={[{ gap: 7, alignItems: 'center', alignSelf: 'stretch' }, riseStyle]}>
           <AppText size="xl" weight="700" center style={{ letterSpacing: -0.2, lineHeight: t.fs.xl * 1.3 }}>
-            {title ?? spec.title}
+            {tt(title ?? spec.title)}
           </AppText>
           {message ? (
             <AppText size="base" muted center style={{ lineHeight: 22, maxWidth: 292 }}>
-              {message}
+              {tt(message)}
             </AppText>
           ) : null}
           {detail ? (
@@ -251,7 +253,7 @@ export const AlertDialog: React.FC<AlertDialogProps> = ({
               }}
             >
               <AppText size="xs" weight="600" mono center color={tone.fg} numberOfLines={2}>
-                {detail}
+                {tt(detail)}
               </AppText>
             </View>
           ) : null}
@@ -265,7 +267,7 @@ export const AlertDialog: React.FC<AlertDialogProps> = ({
             <Button label={cancelLabel} variant="outline" onPress={onClose} style={{ flex: 1 }} />
           ) : null}
           <Button
-            label={confirmLabel ?? spec.confirm}
+            label={confirmLabel ?? tt(spec.confirm)}
             variant={spec.danger && isConfirm ? 'destructive' : isConfirm ? 'primary' : 'subtle'}
             onPress={() => {
               onConfirm?.();

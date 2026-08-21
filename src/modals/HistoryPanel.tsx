@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText, Badge, Button, SidePanel } from '../components';
 import { useApp } from '../state/AppContext';
 import { useTheme, withAlpha } from '../theme';
+import { useT } from '../i18n';
 
 interface HistoryEntry {
   date: string;
@@ -30,17 +31,18 @@ export const HistoryPanel: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions, derived } = useApp();
+  const tt = useT();
 
   return (
     <SidePanel
       visible={state.historyOpen}
       onClose={() => actions.setHistoryOpen(false)}
-      title="ประวัติการรักษาย้อนหลัง"
-      caption={`${derived.current?.name ?? 'ตัวอย่างข้อมูล'} · ${ENTRIES.length} ครั้งล่าสุดในเครื่องนี้`}
+      title={tt('ประวัติการรักษาย้อนหลัง')}
+      caption={tt('{name} · {n} ครั้งล่าสุดในเครื่องนี้', { name: derived.current?.name ?? tt('ตัวอย่างข้อมูล'), n: ENTRIES.length })}
       footer={
         <>
-          <Button label="ปิด" variant="outline" onPress={() => actions.setHistoryOpen(false)} />
-          <Button label="นำไปใช้ในการตรวจ" onPress={() => actions.setHistoryOpen(false)} />
+          <Button label={tt('ปิด')} variant="outline" onPress={() => actions.setHistoryOpen(false)} />
+          <Button label={tt('นำไปใช้ในการตรวจ')} onPress={() => actions.setHistoryOpen(false)} />
         </>
       }
     >
@@ -115,9 +117,9 @@ export const HistoryPanel: React.FC = () => {
                     </AppText>
                   </View>
                   <AppText size="sm" weight="700" style={{ flex: 1 }} numberOfLines={1}>
-                    {e.title}
+                    {tt(e.title)}
                   </AppText>
-                  {latest ? <Badge label="ล่าสุด" tone="success" size="sm" /> : null}
+                  {latest ? <Badge label={tt('ล่าสุด')} tone="success" size="sm" /> : null}
                 </View>
                 <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                   {e.tags.map((tag) => (
@@ -154,7 +156,7 @@ export const HistoryPanel: React.FC = () => {
         >
           <MaterialCommunityIcons name="cloud-off-outline" size={16} color={t.tones.warning.fg} style={{ marginTop: 1 }} />
           <AppText size="xs" color={t.tones.warning.fg} style={{ flex: 1 }}>
-            โหมดออฟไลน์ — แสดงเฉพาะประวัติที่เก็บในเครื่องนี้ ประวัติจากหน่วยบริการอื่นจะดึงจาก Cloud เมื่อออนไลน์
+            {tt('โหมดออฟไลน์ — แสดงเฉพาะประวัติที่เก็บในเครื่องนี้ ประวัติจากหน่วยบริการอื่นจะดึงจาก Cloud เมื่อออนไลน์')}
           </AppText>
         </View>
       </View>

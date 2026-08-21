@@ -7,6 +7,7 @@ import { useApp } from '../state/AppContext';
 import type { AppNotice, NoticeTone } from '../state/types';
 import { useTheme, withAlpha } from '../theme';
 import type { Tone } from '../theme';
+import { useT } from '../i18n';
 
 const PANEL_W = 360;
 
@@ -20,6 +21,7 @@ const ICON: Record<NoticeTone, keyof typeof Ionicons.glyphMap> = {
 /** แถวแจ้งเตือน 1 รายการ */
 const NoticeRow: React.FC<{ n: AppNotice; onPress: () => void }> = ({ n, onPress }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   const [hover, setHover] = useState(false);
   const tone = t.tones[n.tone as Tone];
@@ -53,13 +55,13 @@ const NoticeRow: React.FC<{ n: AppNotice; onPress: () => void }> = ({ n, onPress
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
           <AppText size="sm" weight={n.read ? '500' : '600'} numberOfLines={2} style={{ flex: 1 }}>
-            {n.title}
+            {tt(n.title)}
           </AppText>
           {n.read ? null : <StatusDot color={c.primary} size={7} />}
         </View>
         {n.detail ? (
           <AppText size="xs" muted numberOfLines={2}>
-            {n.detail}
+            {tt(n.detail)}
           </AppText>
         ) : null}
         <AppText size="xs" muted mono>
@@ -78,6 +80,7 @@ export const NoticeBell: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions, derived } = useApp();
+  const tt = useT();
   const { width: winW } = useWindowDimensions();
   const btnRef = useRef<View>(null);
   const [open, setOpen] = useState(false);
@@ -116,7 +119,7 @@ export const NoticeBell: React.FC = () => {
         onPress={show}
         onPointerEnter={() => setHover(true)}
         onPointerLeave={() => setHover(false)}
-        accessibilityLabel={unread ? `การแจ้งเตือน ${unread} รายการใหม่` : 'การแจ้งเตือน'}
+        accessibilityLabel={unread ? tt('การแจ้งเตือน {n} รายการใหม่', { n: unread }) : tt('การแจ้งเตือน')}
         style={{
           width: 40,
           height: 40,
@@ -189,12 +192,12 @@ export const NoticeBell: React.FC = () => {
                 }}
               >
                 <AppText size="sm" weight="700" style={{ flex: 1 }}>
-                  การแจ้งเตือน
+                  {tt('การแจ้งเตือน')}
                 </AppText>
                 {unread ? (
                   <Pressable onPress={actions.markAllNoticesRead} hitSlop={6}>
                     <AppText size="xs" weight="600" color={c.primary}>
-                      อ่านทั้งหมด
+                      {tt('อ่านทั้งหมด')}
                     </AppText>
                   </Pressable>
                 ) : null}
@@ -204,7 +207,7 @@ export const NoticeBell: React.FC = () => {
                 <View style={{ padding: 30, alignItems: 'center', gap: 8 }}>
                   <Ionicons name="notifications-off-outline" size={26} color={c.mutedForeground} />
                   <AppText size="sm" muted>
-                    ยังไม่มีการแจ้งเตือน
+                    {tt('ยังไม่มีการแจ้งเตือน')}
                   </AppText>
                 </View>
               ) : (
@@ -221,18 +224,18 @@ export const NoticeBell: React.FC = () => {
                   onPress={() =>
                     actions.showAlert({
                       kind: 'delete',
-                      title: 'ล้างการแจ้งเตือนทั้งหมด?',
-                      message: 'รายการแจ้งเตือนทั้งหมดจะถูกลบออกจากเครื่อง และเรียกคืนไม่ได้',
+                      title: tt('ล้างการแจ้งเตือนทั้งหมด?'),
+                      message: tt('รายการแจ้งเตือนทั้งหมดจะถูกลบออกจากเครื่อง และเรียกคืนไม่ได้'),
                       detail: `${state.notices.length} รายการ`,
-                      cancelLabel: 'ยกเลิก',
-                      confirmLabel: 'ลบทั้งหมด',
+                      cancelLabel: tt('ยกเลิก'),
+                      confirmLabel: tt('ลบทั้งหมด'),
                       onConfirm: actions.clearNotices,
                     })
                   }
                   style={{ height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: c.surface2 }}
                 >
                   <AppText size="xs" weight="600" muted>
-                    ล้างการแจ้งเตือนทั้งหมด
+                    {tt('ล้างการแจ้งเตือนทั้งหมด')}
                   </AppText>
                 </Pressable>
               ) : null}

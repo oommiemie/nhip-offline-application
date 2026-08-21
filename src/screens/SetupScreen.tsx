@@ -29,11 +29,12 @@ import { FACILITIES } from '../state/mockData';
 import { useApp } from '../state/AppContext';
 import { shade, useTheme, withAlpha } from '../theme';
 import { fmtInt } from '../utils/format';
+import { tr, useT } from '../i18n';
 
 const stepsFor = (stage: 'sso' | 'pick' | 'import'): StepChipItem[] => [
-  { label: 'เข้าสู่ระบบ SSO', state: stage === 'sso' ? 'active' : 'done' },
-  { label: 'เลือกหน่วยงาน', state: stage === 'sso' ? 'pending' : stage === 'pick' ? 'active' : 'done' },
-  { label: 'ดาวน์โหลด / นำเข้า', state: stage === 'import' ? 'active' : 'pending' },
+  { label: tr('เข้าสู่ระบบ SSO'), state: stage === 'sso' ? 'active' : 'done' },
+  { label: tr('เลือกหน่วยงาน'), state: stage === 'sso' ? 'pending' : stage === 'pick' ? 'active' : 'done' },
+  { label: tr('ดาวน์โหลด / นำเข้า'), state: stage === 'import' ? 'active' : 'pending' },
 ];
 
 /** ไอคอนหมุนระหว่างกำลังดึงไฟล์ */
@@ -88,10 +89,10 @@ const LockedPanel: React.FC<{ text: string; style?: StyleProp<ViewStyle> }> = ({
 /** สถานะของตารางหนึ่งรายการ — ใช้ทั้งไอคอนหน้าแถวและป้ายท้ายแถว */
 const rowStatus = (pct: number): { label: string; tone: 'success' | 'warning' | 'neutral' } =>
   pct >= 100
-    ? { label: 'นำเข้าแล้ว', tone: 'success' }
+    ? { label: tr('นำเข้าแล้ว'), tone: 'success' }
     : pct > 0
-      ? { label: 'กำลังดึง', tone: 'warning' }
-      : { label: 'รอคิว', tone: 'neutral' };
+      ? { label: tr('กำลังดึง'), tone: 'warning' }
+      : { label: tr('รอคิว'), tone: 'neutral' };
 
 /** แถวตารางนำเข้าข้อมูล 1 ตาราง — ชื่อ/ไฟล์ · จำนวนแถว · ป้ายสถานะ · แถบความคืบหน้า */
 const ImportRow: React.FC<{ label: string; file: string; rows: number; size: string; pct: number }> = ({
@@ -159,6 +160,7 @@ export const SetupScreen: React.FC = () => {
   const c = t.colors;
   const heroBase = t.festival === 'none' ? c.primary : c.secondary;
   const { state, actions } = useApp();
+  const tt = useT();
   const { width } = useWindowDimensions();
   const wide = width >= 1000;
 
@@ -260,16 +262,16 @@ export const SetupScreen: React.FC = () => {
           </View>
           <View style={{ flex: 1 }}>
             <AppText size="md" weight="600" color="#FFFFFF">
-              ยืนยันตัวตนแล้ว
+              {tt('ยืนยันตัวตนแล้ว')}
             </AppText>
             <AppText size="xs" color={withAlpha('#FFFFFF', 0.8)} mono>
               {state.ssoUser} · {state.ssoTime}
             </AppText>
           </View>
-          <Tooltip label="ออกจากระบบ SSO">
+          <Tooltip label={tt('ออกจากระบบ SSO')}>
             <Pressable
               onPress={actions.ssoLogout}
-              accessibilityLabel="ออกจากระบบ SSO"
+              accessibilityLabel={tt('ออกจากระบบ SSO')}
               style={{
                 width: 32,
                 height: 32,
@@ -300,14 +302,14 @@ export const SetupScreen: React.FC = () => {
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <AppText size="md" weight="600" color="#FFFFFF" numberOfLines={1}>
-              ยังไม่ได้ยืนยันตัวตน
+              {tt('ยังไม่ได้ยืนยันตัวตน')}
             </AppText>
             <AppText size="xs" color={withAlpha('#FFFFFF', 0.8)} numberOfLines={1}>
-              เข้าสู่ระบบ MOPH SSO เพื่อดึงข้อมูล
+              {tt('เข้าสู่ระบบ MOPH SSO เพื่อดึงข้อมูล')}
             </AppText>
           </View>
           <Button
-            label={state.sso === 'busy' ? 'กำลังยืนยัน…' : 'เข้าสู่ระบบ'}
+            label={state.sso === 'busy' ? tt('กำลังยืนยัน…') : tt('เข้าสู่ระบบ')}
             variant="outline"
             size="sm"
             loading={state.sso === 'busy'}
@@ -319,7 +321,7 @@ export const SetupScreen: React.FC = () => {
       {/* หัวข้อจับกลุ่มกับลิสต์ — จอใหญ่: ลิสต์เลื่อนภายใน ส่วนอื่นยึดตำแหน่ง */}
       <View style={{ gap: 12, ...(wide ? { flex: 1, minHeight: 0 } : null) }}>
         <AppText size="sm" weight="600" muted>
-          เลือกสังกัด / หน่วยงานประจำเครื่อง
+          {tt('เลือกสังกัด / หน่วยงานประจำเครื่อง')}
         </AppText>
         {!authed ? (
           <LockedPanel text="รายชื่อหน่วยงานจะแสดงหลังยืนยันตัวตน" style={wide ? { flex: 1 } : { minHeight: 150 }} />
@@ -334,7 +336,7 @@ export const SetupScreen: React.FC = () => {
 
       <Pressable onPress={collapseAndBack} style={{ flexDirection: 'row', alignSelf: 'center', alignItems: 'center', gap: 6, paddingVertical: 4 }}>
         <AppText size="sm" weight="600" color={c.primaryStrong}>
-          กลับหน้าหลัก
+          {tt('กลับหน้าหลัก')}
         </AppText>
         <Ionicons name="arrow-forward" size={14} color={c.primaryStrong} />
       </Pressable>
@@ -342,7 +344,7 @@ export const SetupScreen: React.FC = () => {
   );
 
   const importRows = state.setupTables.map((x) => (
-    <ImportRow key={x.file} label={x.label} file={x.file} rows={x.rows} size={x.size} pct={x.pct} />
+    <ImportRow key={x.file} label={tt(x.label)} file={x.file} rows={x.rows} size={x.size} pct={x.pct} />
   ));
 
   // ความคืบหน้ารวมของทั้งชุด (เฉลี่ยจากทุกตาราง)
@@ -354,10 +356,10 @@ export const SetupScreen: React.FC = () => {
     <View style={{ flex: 1, gap: 14, ...(wide ? { alignSelf: 'stretch', minHeight: 0 } : null) }}>
       <View style={{ gap: 3 }}>
         <AppText size="xl" weight="700">
-          ดึงและนำเข้าข้อมูลพื้นฐาน
+          {tt('ดึงและนำเข้าข้อมูลพื้นฐาน')}
         </AppText>
         <AppText size="sm" muted>
-          ยังไม่เริ่ม — รอยืนยันตัวตน
+          {tt('ยังไม่เริ่ม — รอยืนยันตัวตน')}
         </AppText>
       </View>
       <LockedPanel
@@ -371,10 +373,10 @@ export const SetupScreen: React.FC = () => {
         <View style={{ flex: 1, minWidth: 220, gap: 3 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
             <AppText size="xl" weight="700">
-              ดึงและนำเข้าข้อมูลพื้นฐาน
+              {tt('ดึงและนำเข้าข้อมูลพื้นฐาน')}
             </AppText>
             <Badge
-              label={state.setupDone ? 'พร้อมใช้งาน' : state.setupRunning ? 'กำลังดาวน์โหลด' : 'ยังไม่เริ่ม'}
+              label={state.setupDone ? tt('พร้อมใช้งาน') : state.setupRunning ? tt('กำลังดาวน์โหลด') : tt('ยังไม่เริ่ม')}
               tone={state.setupDone ? 'success' : state.setupRunning ? 'warning' : 'neutral'}
               size="sm"
               dot
@@ -400,10 +402,10 @@ export const SetupScreen: React.FC = () => {
         <Button
           label={
             state.setupDone
-              ? 'เสร็จสิ้น · ไปหน้าเข้าสู่ระบบ'
+              ? tt('เสร็จสิ้น · ไปหน้าเข้าสู่ระบบ')
               : state.setupRunning
-                ? 'กำลังดาวน์โหลด…'
-                : 'ดาวน์โหลดและนำเข้าข้อมูล'
+                ? tt('กำลังดาวน์โหลด…')
+                : tt('ดาวน์โหลดและนำเข้าข้อมูล')
           }
           icon={
             state.setupDone ? (

@@ -1,3 +1,5 @@
+import { getLang, tr } from '../i18n/lang';
+
 const THAI_DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 const THAI_MONTHS = [
   'มกราคม',
@@ -20,18 +22,38 @@ export const nowHM = (): string => {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-/** วันที่ไทยแบบเต็ม เช่น "วันพฤหัสบดีที่ 14 สิงหาคม 2569" */
+const EN_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const EN_MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+/**
+ * วันที่ของวันนี้ตามภาษาที่เลือก
+ * ไทย: "วันพฤหัสบดีที่ 14 สิงหาคม 2569" (พ.ศ.) · อังกฤษ: "Thursday 14 August 2026" (ค.ศ.)
+ */
 export const thaiToday = (): string => {
   const d = new Date();
+  if (getLang() === 'en') return `${EN_DAYS[d.getDay()]} ${d.getDate()} ${EN_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   return `วัน${THAI_DAYS[d.getDay()]}ที่ ${d.getDate()} ${THAI_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
 };
 
 /** คำทักทายตามช่วงเวลา */
 export const greeting = (): string => {
   const h = new Date().getHours();
-  if (h < 12) return 'สวัสดีตอนเช้า';
-  if (h < 17) return 'สวัสดีตอนบ่าย';
-  return 'สวัสดีตอนเย็น';
+  if (h < 12) return tr('สวัสดีตอนเช้า');
+  if (h < 17) return tr('สวัสดีตอนบ่าย');
+  return tr('สวัสดีตอนเย็น');
 };
 
 /** 1234 -> "1,234" */

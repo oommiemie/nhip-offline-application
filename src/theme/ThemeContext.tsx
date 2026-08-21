@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 
 import { resolveColors, resolveFestive, resolveKpi, resolveTones } from './palettes';
 import { monoFontFamily, uiFontFamily } from './fonts';
+import { setLang } from '../i18n/lang';
 import type {
   DensityId,
   DensitySpec,
@@ -94,6 +95,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const id = setInterval(check, 60_000);
     return () => clearInterval(id);
   }, [settings.mode]);
+
+  // ให้โค้ดที่อยู่นอกคอมโพเนนต์ (action ที่สร้างข้อความแจ้งเตือน) รู้ภาษาที่เลือกอยู่ด้วย
+  setLang(settings.language);
 
   const theme = useMemo<Theme>(() => {
     const mode: Mode = settings.mode === 'auto' ? (autoDark ? 'dark' : 'light') : settings.mode;

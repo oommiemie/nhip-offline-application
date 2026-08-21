@@ -6,6 +6,7 @@ import { AppText, MedicalParticles, PARTICLE_SHAPES, XMAS_SHAPES } from '../comp
 import type { ParticleShape } from '../components';
 import { FigmaAssets } from '../assets';
 import { shade, useTheme, withAlpha } from '../theme';
+import { useT } from '../i18n';
 
 /**
  * แผงแบรนด์ฝั่งซ้ายของหน้า Login / SSO (Figma node 15:6 "Hero-Panel-Left")
@@ -14,6 +15,7 @@ import { shade, useTheme, withAlpha } from '../theme';
  */
 export const BrandPanel: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const t = useTheme();
+  const tt = useT();
   const { width } = useWindowDimensions();
   const pad = compact ? 20 : width >= 1200 ? 64 : 36;
   const logo = compact ? 52 : 124;
@@ -94,7 +96,7 @@ export const BrandPanel: React.FC<{ compact?: boolean }> = ({ compact = false })
               NHIP
             </AppText>
             <AppText size="sm" color={withAlpha('#FFFFFF', 0.92)}>
-              ระบบสารสนเทศสำหรับ{'\n'}โรงพยาบาลส่งเสริมสุขภาพตำบล (รพ.สต.)
+              {tt('ระบบสารสนเทศสำหรับ\nโรงพยาบาลส่งเสริมสุขภาพตำบล (รพ.สต.)')}
             </AppText>
           </View>
         </View>
@@ -134,7 +136,7 @@ export const BrandPanel: React.FC<{ compact?: boolean }> = ({ compact = false })
               NHIP
             </AppText>
             <AppText size={20} weight="500" color={withAlpha('#FFFFFF', 0.92)} style={{ lineHeight: 30 }}>
-              ระบบสารสนเทศสำหรับ{'\n'}โรงพยาบาลส่งเสริมสุขภาพตำบล (รพ.สต.)
+              {tt('ระบบสารสนเทศสำหรับ\nโรงพยาบาลส่งเสริมสุขภาพตำบล (รพ.สต.)')}
             </AppText>
           </Animated.View>
         </View>

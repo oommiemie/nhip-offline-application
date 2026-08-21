@@ -13,6 +13,7 @@ import {
   withAlpha,
 } from '../theme';
 import type { DensityId, FontSizeId, ModePref } from '../theme';
+import { useT } from '../i18n';
 
 /** หัวข้อในการ์ด: ขีดสีนำ + 16/700 + เส้นคั่นใต้ (ตาม Figma 146:1511) */
 const SecTitle: React.FC<{ label: string }> = ({ label }) => {
@@ -131,11 +132,12 @@ const ModeBtn: React.FC<{
 /** สวิตช์ 3 ทาง สว่าง/มืด/อัตโนมัติ — พิลขาวไถลไปช่องที่เลือกด้วยสปริง */
 const ModeSegment: React.FC<{ value: ModePref; onChange: (v: ModePref) => void }> = ({ value, onChange }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   const items: Array<[ModePref, string, keyof typeof Ionicons.glyphMap]> = [
-    ['light', 'สว่าง', 'sunny-outline'],
-    ['dark', 'มืด', 'moon-outline'],
-    ['auto', 'อัตโนมัติ', 'time-outline'],
+    ['light', tt('สว่าง'), 'sunny-outline'],
+    ['dark', tt('มืด'), 'moon-outline'],
+    ['auto', tt('อัตโนมัติ'), 'time-outline'],
   ];
   const idx = Math.max(0, items.findIndex(([id]) => id === value));
   const slide = useRef(new Animated.Value(idx)).current;
@@ -188,11 +190,14 @@ const Swatches: React.FC<{ colors: [string, string, string, string] }> = ({ colo
 const BADGE_SLOT_H = 24;
 
 /** ช่องป้ายสถานะ — จองพื้นที่ไว้ตลอด แสดงป้ายเฉพาะตอนใช้อยู่ */
-const BadgeSlot: React.FC<{ active: boolean; align?: 'flex-start' | 'flex-end' }> = ({ active, align = 'flex-end' }) => (
-  <View style={{ height: BADGE_SLOT_H, justifyContent: 'center', alignItems: align }}>
-    {active ? <Badge label="ใช้อยู่" tone="primary" size="sm" /> : null}
-  </View>
-);
+const BadgeSlot: React.FC<{ active: boolean; align?: 'flex-start' | 'flex-end' }> = ({ active, align = 'flex-end' }) => {
+  const tt = useT();
+  return (
+    <View style={{ height: BADGE_SLOT_H, justifyContent: 'center', alignItems: align }}>
+      {active ? <Badge label={tt('ใช้อยู่')} tone="primary" size="sm" /> : null}
+    </View>
+  );
+};
 
 /** คำอธิบายไทล์ — ล็อกความสูง 2 บรรทัดเสมอ ไม่ว่าข้อความสั้นหรือยาว */
 const TileDesc: React.FC<{ children: string }> = ({ children }) => {
@@ -252,6 +257,7 @@ const SIZE_LABELS: Record<FontSizeId, string> = {
 /** สไลเดอร์ขนาดตัวอักษร a — A · 5 ระดับ กดที่จุด/รางเพื่อเลือก */
 const SizeSlider: React.FC<{ value: FontSizeId; onChange: (v: FontSizeId) => void }> = ({ value, onChange }) => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   const idx = Math.max(0, SIZE_ORDER.indexOf(value));
   return (
@@ -308,7 +314,7 @@ const SizeSlider: React.FC<{ value: FontSizeId; onChange: (v: FontSizeId) => voi
         </AppText>
       </View>
       <AppText size="xs" muted>
-        ระดับปัจจุบัน · {SIZE_LABELS[value]}
+        {tt('ระดับปัจจุบัน · {label}', { label: tt(SIZE_LABELS[value]) })}
       </AppText>
     </View>
   );
@@ -317,6 +323,7 @@ const SizeSlider: React.FC<{ value: FontSizeId; onChange: (v: FontSizeId) => voi
 /** หน้า 05 — ตั้งค่าระบบ · รูปลักษณ์ ตาม Figma 146:1511 */
 export const SettingsScreen: React.FC = () => {
   const t = useTheme();
+  const tt = useT();
   const c = t.colors;
   const {
     settings,
@@ -340,19 +347,19 @@ export const SettingsScreen: React.FC = () => {
 
   const themeCard = (
     <Card rounded="xl" padded={16} shadow="md" style={{ borderWidth: 0, gap: 14 }}>
-      <SecTitle label="ธีมสี" />
-      <Row label="รูปลักษณ์">
+      <SecTitle label={tt('ธีมสี')} />
+      <Row label={tt('รูปลักษณ์')}>
         <ModeSegment value={settings.mode} onChange={setMode} />
       </Row>
       {settings.mode === 'auto' ? (
         <AppText size="xs" muted style={{ textAlign: 'right' }}>
-          อัตโนมัติตามเวลาเครื่อง — สว่าง 06:00–17:59 · มืด 18:00–05:59
+          {tt('อัตโนมัติตามเวลาเครื่อง — สว่าง 06:00–17:59 · มืด 18:00–05:59')}
         </AppText>
       ) : null}
       <RowDivider />
 
       <AppText size="sm" weight="600">
-        ธีมสีพื้นฐาน
+        {tt('ธีมสีพื้นฐาน')}
       </AppText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         {PALETTE_LIST.map((p) => {
@@ -368,14 +375,14 @@ export const SettingsScreen: React.FC = () => {
               <AppText size="sm" weight="700" numberOfLines={1}>
                 {p.name}
               </AppText>
-              <TileDesc>{p.desc}</TileDesc>
+              <TileDesc>{tt(p.desc)}</TileDesc>
             </OptionTile>
           );
         })}
       </View>
       <RowDivider />
 
-      <Row label="เปลี่ยนตามเทศกาล">
+      <Row label={tt('เปลี่ยนตามเทศกาล')}>
         <Toggle
           value={festOpen}
           onChange={(v) => {
@@ -388,7 +395,7 @@ export const SettingsScreen: React.FC = () => {
       {festOpen ? (
         <>
           <AppText size="sm" weight="600">
-            ธีมสีพิเศษ
+            {tt('ธีมสีพิเศษ')}
           </AppText>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {FESTIVAL_LIST.map((f) => {
@@ -404,7 +411,7 @@ export const SettingsScreen: React.FC = () => {
                   <AppText size="sm" weight="700" numberOfLines={1}>
                     {f.name}
                   </AppText>
-                  <TileDesc>{f.desc}</TileDesc>
+                  <TileDesc>{tt(f.desc)}</TileDesc>
                 </OptionTile>
               );
             })}
@@ -416,16 +423,16 @@ export const SettingsScreen: React.FC = () => {
 
   const layoutCard = (
     <Card rounded="xl" padded={16} shadow="md" style={{ borderWidth: 0, gap: 14 }}>
-      <SecTitle label="โครงหน้าจอ" />
+      <SecTitle label={tt('โครงหน้าจอ')} />
       <AppText size="sm" weight="600">
-        ระยะห่าง
+        {tt('ระยะห่าง')}
       </AppText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         {(
           [
-            ['compact', 'กระชับ', 3, 6],
-            ['normal', 'ปกติ', 6, 8],
-            ['comfortable', 'สบาย', 9, 10],
+            ['compact', tt('กระชับ'), 3, 6],
+            ['normal', tt('ปกติ'), 6, 8],
+            ['comfortable', tt('สบาย'), 9, 10],
           ] as Array<[DensityId, string, number, number]>
         ).map(([id, label, gap, bar]) => {
           const active = settings.density === id;
@@ -450,8 +457,8 @@ export const SettingsScreen: React.FC = () => {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         {(
           [
-            ['normal', 'ปกติ'],
-            ['compact', 'เล็ก'],
+            ['normal', tt('ปกติ')],
+            ['compact', tt('เล็ก')],
           ] as Array<['normal' | 'compact', string]>
         ).map(([id, label]) => {
           const active = settings.sidebar === id;
@@ -469,16 +476,16 @@ export const SettingsScreen: React.FC = () => {
         })}
       </View>
       <AppText size="xs" muted>
-        มีผลบนจอกว้าง — จอแคบระบบย่อ Sidebar ให้อัตโนมัติอยู่แล้ว
+        {tt('มีผลบนจอกว้าง — จอแคบระบบย่อ Sidebar ให้อัตโนมัติอยู่แล้ว')}
       </AppText>
     </Card>
   );
 
   const fontCard = (
     <Card rounded="xl" padded={16} shadow="md" style={{ borderWidth: 0, gap: 14 }}>
-      <SecTitle label="ตัวอักษร" />
+      <SecTitle label={tt('ตัวอักษร')} />
       <AppText size="sm" weight="600">
-        รูปลักษณ์
+        {tt('รูปลักษณ์')}
       </AppText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         {FONT_LIST.map((f) => {
@@ -489,9 +496,9 @@ export const SettingsScreen: React.FC = () => {
                 <View style={{ flex: 1, gap: 3 }}>
                   <BadgeSlot active={active} align="flex-start" />
                   <AppText size="sm" weight="600" numberOfLines={1} style={{ fontFamily: uiFontFamily(f.id, '600') }}>
-                    สบายดี
+                    {tt('สบายดี')}
                   </AppText>
-                  <TileDesc>{f.name}</TileDesc>
+                  <TileDesc>{tt(f.name)}</TileDesc>
                 </View>
                 <AppText size={30} weight="700" color={withAlpha(c.mutedForeground, 0.55)} style={{ fontFamily: uiFontFamily(f.id, '700') }}>
                   Aa
@@ -503,13 +510,13 @@ export const SettingsScreen: React.FC = () => {
       </View>
       <RowDivider />
 
-      <Row label="ตัวอักษรตัวหนา">
+      <Row label={tt('ตัวอักษรตัวหนา')}>
         <Toggle value={settings.fontBold} onChange={setFontBold} />
       </Row>
       <RowDivider />
 
       <AppText size="sm" weight="600">
-        ขนาด
+        {tt('ขนาด')}
       </AppText>
       <SizeSlider value={settings.fontSize} onChange={setFontSize} />
     </Card>
@@ -517,7 +524,7 @@ export const SettingsScreen: React.FC = () => {
 
   const langCard = (
     <Card rounded="xl" padded={16} shadow="md" style={{ borderWidth: 0, gap: 14 }}>
-      <SecTitle label="ภาษา · Language" />
+      <SecTitle label={tt('ภาษา · Language')} />
       <View style={{ gap: 10 }}>
         {(
           [
@@ -543,7 +550,7 @@ export const SettingsScreen: React.FC = () => {
         })}
       </View>
       <AppText size="xs" muted>
-        เวอร์ชันต้นแบบยังแสดงเป็นภาษาไทย — ระบบบันทึกภาษาที่เลือกไว้สำหรับรุ่นถัดไป
+        {tt('เปลี่ยนแล้วหน้าจอเปลี่ยนภาษาทันที — ข้อมูลผู้ป่วยยังคงแสดงตามที่บันทึกไว้เดิม')}
       </AppText>
     </Card>
   );
@@ -553,14 +560,14 @@ export const SettingsScreen: React.FC = () => {
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
         <View style={{ flex: 1, minWidth: 240, gap: 2 }}>
           <AppText size="xxl" weight="700" color={t.isDark ? c.foreground : c.secondary}>
-            ตั้งค่าระบบ · รูปลักษณ์
+            {tt('ตั้งค่าระบบ · รูปลักษณ์')}
           </AppText>
           <AppText size="sm" weight="600" color={t.isDark ? c.accent : c.primaryStrong}>
-            มีผลเฉพาะเครื่องนี้ · บันทึกอัตโนมัติ
+            {tt('มีผลเฉพาะเครื่องนี้ · บันทึกอัตโนมัติ')}
           </AppText>
         </View>
         <Button
-          label="คืนค่าเริ่มต้น"
+          label={tt('คืนค่าเริ่มต้น')}
           variant="outline"
           icon={<Ionicons name="arrow-down-outline" size={15} color={c.primary} />}
           onPress={() => {

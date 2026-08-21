@@ -16,6 +16,7 @@ import { AppText } from '../components';
 import { NAV } from '../navigation/navItems';
 import { useApp } from '../state/AppContext';
 import { useTheme, withAlpha } from '../theme';
+import { useT } from '../i18n';
 
 const WEB_NO_OUTLINE = Platform.OS === 'web' ? ({ outlineStyle: 'none', outlineWidth: 0 } as unknown as TextStyle) : null;
 /**
@@ -54,6 +55,7 @@ export const Spotlight: React.FC<SpotlightProps> = ({ visible, onClose }) => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions } = useApp();
+  const tt = useT();
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const inputRef = useRef<TextInput>(null);
@@ -92,10 +94,10 @@ export const Spotlight: React.FC<SpotlightProps> = ({ visible, onClose }) => {
     hits.slice(0, 6).forEach(({ r, i }) => {
       out.push({
         key: `p-${r.hn}`,
-        group: 'ผู้ป่วยในคิววันนี้',
+        group: tt('ผู้ป่วยในคิววันนี้'),
         icon: 'person-outline',
         title: r.name,
-        sub: `HN ${r.hn} · คิว ${r.queueNo} · ${r.age} ปี`,
+        sub: tt('HN {hn} · คิว {queue} · {age} ปี', { hn: r.hn, queue: r.queueNo, age: r.age }),
         run: () => actions.openEncounter(i),
       });
     });
@@ -104,7 +106,7 @@ export const Spotlight: React.FC<SpotlightProps> = ({ visible, onClose }) => {
     NAV.filter((n) => !term || n.label.toLowerCase().includes(term)).forEach((n) =>
       out.push({
         key: `n-${n.id}`,
-        group: 'ไปที่หน้า',
+        group: tt('ไปที่หน้า'),
         icon: n.icon,
         title: n.label,
         sub: n.section,
@@ -114,12 +116,12 @@ export const Spotlight: React.FC<SpotlightProps> = ({ visible, onClose }) => {
 
     // คำสั่งลัด
     const cmds: Array<{ key: string; icon: keyof typeof Ionicons.glyphMap; title: string; sub: string; run: () => void }> = [
-      { key: 'reg', icon: 'card-outline', title: 'อ่านบัตรประชาชน · ลงทะเบียน', sub: 'รับผู้ป่วยรายใหม่เข้าคิว', run: actions.openReg },
-      { key: 'sync', icon: 'cloud-upload-outline', title: 'เริ่มซิงค์ขึ้น Cloud', sub: 'อัปโหลดรายการที่ค้างอยู่', run: actions.startSync },
+      { key: 'reg', icon: 'card-outline', title: tt('อ่านบัตรประชาชน · ลงทะเบียน'), sub: tt('รับผู้ป่วยรายใหม่เข้าคิว'), run: actions.openReg },
+      { key: 'sync', icon: 'cloud-upload-outline', title: tt('เริ่มซิงค์ขึ้น Cloud'), sub: tt('อัปโหลดรายการที่ค้างอยู่'), run: actions.startSync },
     ];
     cmds
       .filter((x) => !term || x.title.toLowerCase().includes(term))
-      .forEach((x) => out.push({ key: `c-${x.key}`, group: 'คำสั่ง', icon: x.icon, title: x.title, sub: x.sub, run: x.run }));
+      .forEach((x) => out.push({ key: `c-${x.key}`, group: tt('คำสั่ง'), icon: x.icon, title: x.title, sub: x.sub, run: x.run }));
 
     return out;
   }, [q, state.records, actions]);
@@ -227,7 +229,7 @@ export const Spotlight: React.FC<SpotlightProps> = ({ visible, onClose }) => {
                 ref={inputRef}
                 value={q}
                 onChangeText={setQ}
-                placeholder="ค้นหาผู้ป่วย · หน้าจอ · คำสั่ง"
+                placeholder={tt('ค้นหาผู้ป่วย · หน้าจอ · คำสั่ง')}
                 placeholderTextColor={c.mutedForeground}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -333,17 +335,17 @@ export const Spotlight: React.FC<SpotlightProps> = ({ visible, onClose }) => {
               }}
             >
               <AppText size="xs" muted>
-                ↑↓ เลื่อน
+                {tt('↑↓ เลื่อน')}
               </AppText>
               <AppText size="xs" muted>
-                ↵ เปิด
+                {tt('↵ เปิด')}
               </AppText>
               <AppText size="xs" muted>
-                esc ปิด
+                {tt('esc ปิด')}
               </AppText>
               <View style={{ flex: 1 }} />
               <AppText size="xs" muted mono>
-                {items.length} รายการ
+                {tt('{n} รายการ', { n: items.length })}
               </AppText>
             </View>
           </Pressable>

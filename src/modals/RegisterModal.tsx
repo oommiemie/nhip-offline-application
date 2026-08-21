@@ -7,6 +7,7 @@ import { BLOOD_OPTIONS, RIGHT_OPTIONS, SERVICE_OPTIONS } from '../state/mockData
 import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme';
 import { formatPhone, phoneDigits } from '../utils/format';
+import { useT } from '../i18n';
 
 /** ภาพบัตรประชาชนจริงจากไฟล์ Figma (node I31:12223;31:12142) */
 /**
@@ -29,6 +30,7 @@ export const RegisterModal: React.FC = () => {
   const t = useTheme();
   const c = t.colors;
   const { state, actions } = useApp();
+  const tt = useT();
 
   const [right, setRight] = useState(RIGHT_OPTIONS[0]);
   const [service, setService] = useState(SERVICE_OPTIONS[0]);
@@ -82,21 +84,21 @@ export const RegisterModal: React.FC = () => {
           dot: reader === 'connecting' ? c.warning : c.mutedForeground,
           text:
             reader === 'connecting'
-              ? 'กำลังเชื่อมต่อเครื่องอ่านบัตร…'
-              : 'ไม่พร้อมใช้งาน · กรุณาลองเชื่อมเครื่องอ่านบัตรอีกครั้ง',
+              ? tt('กำลังเชื่อมต่อเครื่องอ่านบัตร…')
+              : tt('ไม่พร้อมใช้งาน · กรุณาลองเชื่อมเครื่องอ่านบัตรอีกครั้ง'),
         }
       : reader === 'read'
         ? {
             bg: t.isDark ? t.tones.success.bg : '#F0FDFA',
             title: t.isDark ? c.primary : '#1B4332',
             dot: '#34C759',
-            text: 'อ่านสำเร็จ · ตรวจสอบข้อมูลก่อนบันทึก',
+            text: tt('อ่านสำเร็จ · ตรวจสอบข้อมูลก่อนบันทึก'),
           }
         : {
             bg: t.isDark ? t.tones.info.bg : '#DBEAFE',
             title: t.tones.info.fg,
             dot: reader === 'reading' ? c.warning : '#34C759',
-            text: reader === 'reading' ? 'กำลังอ่านข้อมูลจากชิพ…' : 'พร้อมอ่าน · กรุณาเสียบบัตรประชาชนในเครื่องอ่าน',
+            text: reader === 'reading' ? tt('กำลังอ่านข้อมูลจากชิพ…') : tt('พร้อมอ่าน · กรุณาเสียบบัตรประชาชนในเครื่องอ่าน'),
           };
 
   const card = state.card;
@@ -133,15 +135,15 @@ export const RegisterModal: React.FC = () => {
     <AppModal
       visible={state.regOpen}
       onClose={actions.closeReg}
-      title="ลงทะเบียนคนไข้ใหม่ · อ่านบัตรประชาชน"
+      title={tt('ลงทะเบียนคนไข้ใหม่ · อ่านบัตรประชาชน')}
       // กว้าง 900 เพื่อให้ข้อมูลจากบัตร 6 ช่อง (เพศ…ศาสนา) เรียงจบในแถวเดียว
       maxWidth={900}
       footer={
         reader === 'read' ? (
           <>
-            <Button label="ยกเลิก" variant="outline" onPress={actions.closeReg} />
+            <Button label={tt('ยกเลิก')} variant="outline" onPress={actions.closeReg} />
             <Button
-              label="ยืนยัน"
+              label={tt('ยืนยัน')}
               variant="strong"
               disabled={!card || phoneBad}
               onPress={() =>
@@ -164,7 +166,7 @@ export const RegisterModal: React.FC = () => {
         <View style={{ gap: 10, paddingRight: 118, zIndex: 1 }}>
           <View style={{ gap: 6 }}>
             <AppText size="md" weight="700" color={panel.title}>
-              บัตรประชาชน
+              {tt('บัตรประชาชน')}
             </AppText>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <StatusDot color={panel.dot} size={7} />
@@ -176,7 +178,7 @@ export const RegisterModal: React.FC = () => {
           {/* ทั้ง 3 สถานะมีปุ่มในการ์ดเสมอ — การ์ดจะได้สูงเท่ากัน ไม่กระโดดตอนเปลี่ยนสถานะ */}
           {reader === 'idle' || reader === 'connecting' ? (
             <Button
-              label={reader === 'connecting' ? 'กำลังเชื่อมต่อ…' : 'เชื่อมต่อเครื่องอ่านบัตร'}
+              label={reader === 'connecting' ? tt('กำลังเชื่อมต่อ…') : tt('เชื่อมต่อเครื่องอ่านบัตร')}
               variant="outline"
               size="sm"
               loading={reader === 'connecting'}
@@ -185,7 +187,7 @@ export const RegisterModal: React.FC = () => {
             />
           ) : reader === 'read' ? (
             <Button
-              label="อ่านบัตรใหม่"
+              label={tt('อ่านบัตรใหม่')}
               variant="outline"
               size="sm"
               onPress={actions.rereadCard}
@@ -193,7 +195,7 @@ export const RegisterModal: React.FC = () => {
             />
           ) : (
             <Button
-              label={reader === 'reading' ? 'กำลังอ่าน…' : 'อ่านบัตร'}
+              label={reader === 'reading' ? tt('กำลังอ่าน…') : tt('อ่านบัตร')}
               size="sm"
               loading={reader === 'reading'}
               onPress={actions.readCard}
@@ -225,16 +227,16 @@ export const RegisterModal: React.FC = () => {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: c.primary }} />
               <AppText size="md" weight="700">
-                ข้อมูลผู้ป่วย
+                {tt('ข้อมูลผู้ป่วย')}
               </AppText>
             </View>
             {/* แถว 1: ตัวระบุตัวตน + ช่องติดต่อ · แถว 2: ข้อมูลจากบัตร 6 ช่อง · แถว 3: ที่อยู่เต็มแถว */}
             <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-              <TextField label="เลขบัตรประชาชน (จากบัตร)" value={card.cid} readonly mono containerStyle={{ flex: 1, minWidth: 170 }} />
-              <TextField label="ชื่อ-นามสกุล" value={card.name} readonly containerStyle={{ flex: 1, minWidth: 170 }} />
+              <TextField label={tt('เลขบัตรประชาชน (จากบัตร)')} value={card.cid} readonly mono containerStyle={{ flex: 1, minWidth: 170 }} />
+              <TextField label={tt('ชื่อ-นามสกุล')} value={card.name} readonly containerStyle={{ flex: 1, minWidth: 170 }} />
               {/* เบอร์โทรไม่มีบนบัตร — สอบถามผู้ป่วย ใช้ติดต่อกลับเรื่องผลตรวจ/นัดหมาย */}
               <TextField
-                label="เบอร์โทรศัพท์"
+                label={tt('เบอร์โทรศัพท์')}
                 value={phone}
                 onChangeText={(v) => setPhone(formatPhone(v))}
                 placeholder="081-234-5678"
@@ -243,38 +245,38 @@ export const RegisterModal: React.FC = () => {
                 icon="call-outline"
                 mono
                 maxLength={12}
-                errorText={phoneBad ? 'ต้องมี 9–10 หลัก' : undefined}
+                errorText={phoneBad ? tt('ต้องมี 9–10 หลัก') : undefined}
                 containerStyle={{ flex: 1, minWidth: 170 }}
               />
             </View>
             <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-              <TextField label="เพศ" value={card.sex} readonly containerStyle={{ flex: 1, minWidth: 104 }} />
-              <TextField label="วันเกิด" value={card.dob} readonly mono containerStyle={{ flex: 1, minWidth: 104 }} />
+              <TextField label={tt('เพศ')} value={tt(card.sex)} readonly containerStyle={{ flex: 1, minWidth: 104 }} />
+              <TextField label={tt('วันเกิด')} value={card.dob} readonly mono containerStyle={{ flex: 1, minWidth: 104 }} />
               {/* หมู่เลือดไม่ได้อยู่บนบัตร — ต้องสอบถามผู้ป่วย จึงแก้ไขได้ */}
               <SelectField
-                label="หมู่เลือด"
+                label={tt('หมู่เลือด')}
                 value={bloodType}
                 options={BLOOD_OPTIONS}
                 onChange={setBloodType}
                 containerStyle={{ flex: 1, minWidth: 104 }}
               />
-              <TextField label="เชื้อชาติ" value={card.race} readonly containerStyle={{ flex: 1, minWidth: 104 }} />
-              <TextField label="สัญชาติ" value={card.nationality} readonly containerStyle={{ flex: 1, minWidth: 104 }} />
-              <TextField label="ศาสนา" value={card.religion} readonly containerStyle={{ flex: 1, minWidth: 104 }} />
+              <TextField label={tt('เชื้อชาติ')} value={tt(card.race)} readonly containerStyle={{ flex: 1, minWidth: 104 }} />
+              <TextField label={tt('สัญชาติ')} value={tt(card.nationality)} readonly containerStyle={{ flex: 1, minWidth: 104 }} />
+              <TextField label={tt('ศาสนา')} value={tt(card.religion)} readonly containerStyle={{ flex: 1, minWidth: 104 }} />
             </View>
-            <TextField label="ที่อยู่ตามบัตร" value={card.address} readonly containerStyle={{ flex: 1 }} />
+            <TextField label={tt('ที่อยู่ตามบัตร')} value={card.address} readonly containerStyle={{ flex: 1 }} />
           </View>
 
           <View style={{ gap: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: c.info }} />
               <AppText size="md" weight="700">
-                ข้อมูลการรับบริการ
+                {tt('ข้อมูลการรับบริการ')}
               </AppText>
             </View>
             <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-              <SelectField label="สิทธิ์การรักษา" required value={right} options={RIGHT_OPTIONS} onChange={setRight} containerStyle={{ flex: 1, minWidth: 200 }} />
-              <SelectField label="ประเภทบริการ" required value={service} options={SERVICE_OPTIONS} onChange={setService} containerStyle={{ flex: 1, minWidth: 200 }} />
+              <SelectField label={tt('สิทธิ์การรักษา')} required value={right} options={RIGHT_OPTIONS} onChange={setRight} containerStyle={{ flex: 1, minWidth: 200 }} />
+              <SelectField label={tt('ประเภทบริการ')} required value={service} options={SERVICE_OPTIONS} onChange={setService} containerStyle={{ flex: 1, minWidth: 200 }} />
             </View>
             <View style={{ gap: 6 }}>
               <AppText size="sm" weight="600">
@@ -285,8 +287,8 @@ export const RegisterModal: React.FC = () => {
                 <View style={{ flex: 1, minWidth: 190, flexDirection: 'row', gap: 8 }}>
                 {(
                   [
-                    ['deny', 'ปฏิเสธการแพ้ยา'],
-                    ['has', 'มีประวัติแพ้ยา'],
+                    ['deny', tt('ปฏิเสธการแพ้ยา')],
+                    ['has', tt('มีประวัติแพ้ยา')],
                   ] as Array<['deny' | 'has', string]>
                 ).map(([mode, label]) => {
                   const on = allergyMode === mode;
@@ -316,7 +318,7 @@ export const RegisterModal: React.FC = () => {
                 <TextField
                   value={allergyDrug}
                   onChangeText={setAllergyDrug}
-                  placeholder="ระบุชื่อยา"
+                  placeholder={tt('ระบุชื่อยา')}
                   editable={allergyMode === 'has'}
                   containerStyle={{ flex: 1, minWidth: 190, opacity: allergyMode === 'has' ? 1 : 0.5 }}
                 />
